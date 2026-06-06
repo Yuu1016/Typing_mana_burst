@@ -1,0 +1,12 @@
+build/
+.gradle/
+.gradlew
+.gradlew.bat
+.gradle/
+.settings/
+*.iml
+*.log
+.gradle
+out/
+**/node_modules
+**/.git
