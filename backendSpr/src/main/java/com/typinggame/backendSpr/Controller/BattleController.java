@@ -14,10 +14,11 @@ import com.typinggame.backendSpr.RequestDTO.BattleTurnRequestDto;
 import com.typinggame.backendSpr.ResponseDTO.BattleStateDto;
 import com.typinggame.backendSpr.Service.BattleService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/apo/v1/battles")
+@RequestMapping("/api/v1/battles")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class BattleController {
@@ -29,7 +30,7 @@ public class BattleController {
      * エンドポイント: POST /api/v1/battles/start
      */
     @PostMapping("/start")
-    public ResponseEntity<BattleStateDto> startBattle(@RequestBody BattleStartRequestDto request) {
+    public ResponseEntity<BattleStateDto> startBattle(@Valid @RequestBody BattleStartRequestDto request) {
         // Serviceを呼んで、初期状態のバトルデータ（DTO）を作ってもらう
         BattleStateDto initialState = battleService.startBattle(request.getUserId(), request.getStageId());
         return ResponseEntity.ok(initialState);
@@ -41,7 +42,7 @@ public class BattleController {
      * エンドポイント: POST /api/v1/battles/cast
      */
     @PostMapping("/cast")
-    public ResponseEntity<BattleStateDto> castSkill(@RequestBody BattleTurnRequestDto request) {
+    public ResponseEntity<BattleStateDto> castSkill(@Valid @RequestBody BattleTurnRequestDto request) {
         // Step 4のロジックが詰まった魔法のメソッドを発動！
         BattleStateDto nextState = battleService.executeTurn(request.getAction(), request.getCurrentState());
         return ResponseEntity.ok(nextState);
@@ -52,7 +53,7 @@ public class BattleController {
      *エンドポイント: POST /api/v1/battles/result
      */
     @PostMapping("/result")
-    public ResponseEntity<User> finishBattle(@RequestBody BattleResultRequestDto request) {
+    public ResponseEntity<User> finishBattle(@Valid @RequestBody BattleResultRequestDto request) {
         // ログを保存し、報酬を与えて、最新のユーザー情報を返す
         User updatedUser = battleService.finishBattle(request);
         return ResponseEntity.ok(updatedUser);

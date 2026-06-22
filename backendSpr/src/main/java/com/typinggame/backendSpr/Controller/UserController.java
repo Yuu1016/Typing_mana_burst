@@ -14,6 +14,7 @@ import com.typinggame.backendSpr.Entity.User;
 import com.typinggame.backendSpr.RequestDTO.DeckUpdateRequestDto;
 import com.typinggame.backendSpr.Service.UserService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -29,7 +30,7 @@ public class UserController {
      * エンドポイント: GET /api/v1/users/{userId}
      */
     @GetMapping("/{userId}")
-    public ResponseEntity<User> getUserProfile(@PathVariable Long userId) {
+    public ResponseEntity<User> getUserProfile(@Valid @PathVariable Long userId) {
         User user = userService.getUserProfile(userId);
         return ResponseEntity.ok(user);
     }
@@ -39,7 +40,7 @@ public class UserController {
      * エンドポイント: POST /api/v1/users/{userId}/upgrade-hp
      */
     @PostMapping("/{userId}/upgrade-hp")
-    public ResponseEntity<User> upGradeMaxHp(@PathVariable Long userId) {
+    public ResponseEntity<User> upGradeMaxHp(@Valid @PathVariable Long userId) {
         User updatedUser = userService.upGradeMaxHp(userId);
         return ResponseEntity.ok(updatedUser);
     }
@@ -50,6 +51,7 @@ public class UserController {
      */
     @PutMapping("/{userId}/decks/{slotNumber}")
     public ResponseEntity<User> updateDeckSlot(
+    		@Valid
             @PathVariable Long userId,
             @PathVariable int slotNumber,
             @RequestBody DeckUpdateRequestDto request) {

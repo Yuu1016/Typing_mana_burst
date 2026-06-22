@@ -2,6 +2,8 @@ package com.typinggame.backendSpr.Entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -105,5 +107,6 @@ public class Skill {
      * CASCADE: m_skills削除時に関連するt_user_decksも削除 (ON DELETE CASCADE)
      */
     @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<UserDeck> userDecks;
 }

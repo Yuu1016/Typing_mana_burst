@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: typing_game
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -19,7 +19,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./backendSpr
       dockerfile: dockerfile
     container_name: spring-backend
     environment:

@@ -31,6 +31,7 @@ public class BattleService {
     private final SkillEffectFactory skillEffectFactory;
     private final Random random = new Random();
     
+    
     /**
      * バトルの初期化　ユーザー情報、ステージ情報を取得
      */
@@ -60,7 +61,7 @@ public class BattleService {
         state.setRemainingCost(initialLimitCost); // スタート時は上限と同じ
         
         state.setTurnCount(1);
-        state.setFinished(false);
+        state.setBattleFinished(false);
         state.setVictory(false);
 
         return state;
@@ -75,9 +76,13 @@ public class BattleService {
      * @return スキル発動後の新しいバトル状態
      */
     public BattleStateDto executeTurn(SkillCastRequestDto request, BattleStateDto currentState) {
-    	if(currentState.isFinished()) {
+    	if(currentState.isBattleFinished()) {
     		throw new IllegalStateException("このバトルは既に終了しています");
     	}
+    	
+    	// 今のステージ情報を取得
+    	Stage stage = stageRepository.findById(currentState.getStageId())
+                .orElseThrow(() -> new IllegalArgumentException("ステージが見つかりません ID: " + currentState.getStageId()));
     	
     	//ユーザー情報から発動するスキル情報を取得
     	User user = userService.getUserProfile(request.getUserId());
@@ -112,15 +117,34 @@ public class BattleService {
     	currentState.setPlayerCurrentHp(context.getPlayerCurrentHp());
     	currentState.setEnemyCurrentHp(context.getEnemyCurrentHp());
     	
+    	//敵の反撃と勝敗判定ロジック
     	if(currentState.getEnemyCurrentHp() <= 0) {
+            // 敵を倒した！（プレイヤーの勝利）
     		currentState.setEnemyCurrentHp(0);
-    		currentState.setFinished(true);
+    		currentState.setBattleFinished(true);
     		currentState.setVictory(true);
-    	} else if (currentState.getPlayerCurrentHp() <= 0) {
-    		currentState.setPlayerCurrentHp(0);
-    		currentState.setFinished(true);
-    		currentState.setVictory(false);
-    	}
+    	} else {
+            // 敵が生き残っていたら反撃してくる！（一旦シンプルに固定で10ダメージ与えてくるとします）
+            // ※もし Stage エンティティに enemyAttack があれば、それを引いてください！
+            int newPlayerHp = currentState.getPlayerCurrentHp() - stage.getEnemyAttack();
+            currentState.setPlayerCurrentHp(newPlayerHp);
+
+            // 反撃の結果、プレイヤーが倒れた場合
+            if (currentState.getPlayerCurrentHp() <= 0) {
+                currentState.setPlayerCurrentHp(0);
+                currentState.setBattleFinished(true);
+                currentState.setVictory(false);
+            } else {
+            	currentState.setTurnCount(currentState.getTurnCount() + 1);
+            	
+            	int nextLimit = currentState.getCurrentLimitCost() + 1;
+            	if(nextLimit > 10) {
+            		nextLimit = 10;
+            	}
+            	
+            	currentState.setCurrentLimitCost(nextLimit); 
+            	currentState.setRemainingCost(nextLimit);            }
+        }
     		
     	return currentState;
     	

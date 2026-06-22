@@ -21,6 +21,6 @@ public class BattleStateDto {
     private int currentLimitCost; // 今ターンの使えるコスト上限
     private int remainingCost;    // 今ターンでまだ使えるコスト
     private int turnCount;        // 現在のターン数
-    private boolean isFinished;   // バトルが終了したかどうか
-    private boolean isVictory;    // 勝利したかどうか
+    private boolean battleFinished;   // バトルが終了したかどうか
+    private boolean victory;    // 勝利したかどうか
 }

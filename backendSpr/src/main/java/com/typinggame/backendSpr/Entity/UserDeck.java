@@ -1,5 +1,7 @@
 package com.typinggame.backendSpr.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -66,6 +68,7 @@ public class UserDeck {
     @JoinColumn(name = "user_id", nullable = false,
                 foreignKey = @ForeignKey(name = "fk_user_decks_user"))
     @NotNull
+    @JsonIgnore
     private User user;
 
     /**

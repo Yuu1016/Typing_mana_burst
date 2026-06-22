@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -93,6 +95,7 @@ public class BattleLog {
     @JoinColumn(name = "user_id", nullable = false,
                 foreignKey = @ForeignKey(name = "fk_battle_logs_user"))
     @NotNull
+    @JsonIgnore
     private User user;
 
     /**
@@ -104,5 +107,6 @@ public class BattleLog {
     @JoinColumn(name = "stage_id", nullable = false,
                 foreignKey = @ForeignKey(name = "fk_battle_logs_stage"))
     @NotNull
+    @JsonIgnore
     private Stage stage;
 }

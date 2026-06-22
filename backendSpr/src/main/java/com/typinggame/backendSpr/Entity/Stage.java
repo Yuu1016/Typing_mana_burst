@@ -2,6 +2,8 @@ package com.typinggame.backendSpr.Entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -95,5 +97,6 @@ public class Stage {
      * CASCADE: m_stages削除時に関連するt_battle_logsも削除 (ON DELETE CASCADE)
      */
     @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<BattleLog> battleLogs;
 }
