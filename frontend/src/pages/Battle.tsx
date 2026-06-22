@@ -164,7 +164,7 @@ export default function Battle() {
       setBattleState({
         ...battleState,
         enemyCurrentHp: updatedState.enemyCurrentHp,
-        remainingCost: updatedState.remainingCost
+        remainingCost: battleState.remainingCost - selectedDeck.skill.cost
       });
 
       if (updatedState.enemyCurrentHp < battleState.enemyCurrentHp) {

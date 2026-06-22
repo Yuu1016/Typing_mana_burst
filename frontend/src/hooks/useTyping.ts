@@ -44,6 +44,7 @@ export function useTyping(targetWord: string){
     setTyped("");
     setUntyped(newWord);
     setIsCompleted(false);
+    setMissCount(0);
   };
 
   //未入力文字の先頭が「空白」なら、自動で入力済みに移動させる
