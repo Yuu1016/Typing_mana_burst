@@ -7,7 +7,7 @@ public enum EffectType {
 	DEBUFF;
 	
 	/**
-     * DBから取得した文字列（String）を、Javaの安全なEnumに変換するためのメソッド
+     * DBから取得した文字列（String）を、Enumに変換する
      * * @param text DBに保存されている効果タイプの文字列
      * @return 対応する EffectType のEnum値
      * @throws IllegalArgumentException 未定義の文字列が渡された場合

@@ -26,7 +26,7 @@ public class DamageStrategy implements SkillEffectStrategy{
 	public void apply(Skill skill, BattleContext context) {
     	int damage = skill.getBaseValue();
     	
-    	// 💡 将来の拡張メモ: 
+    	// 将来の拡張メモ: 
         // ここに「属性相性（FIREはWINDに強い等）」や「タイピング精度による倍率」を
         // 計算するロジックを挟むことで、元のコードを汚さずに強化できます。
     	

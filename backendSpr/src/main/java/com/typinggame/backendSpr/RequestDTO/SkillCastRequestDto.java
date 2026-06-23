@@ -1,7 +1,8 @@
 package com.typinggame.backendSpr.RequestDTO;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import java.util.List;
+
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -11,9 +12,10 @@ public class SkillCastRequestDto {
 	@NotNull(message = "ユーザーIDは必須です")
 	private Long userId;
 	
-	@Min(value = 1, message = "スロット番号は１〜５で指定してください")
-	@Max(value = 5, message = "スロット番号は１〜５で指定してください")
-	private int slotNumber;
+	@NotEmpty(message = "スロット番号は1つ以上指定してください")
+	private List<Integer> slotNumbers;
+	
+	private boolean justBonus;
 	
 	
 	

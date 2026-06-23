@@ -1,0 +1,79 @@
+/* src/pagesCss/BattleEffects.css */
+
+/* ================================
+   アニメーション・エフェクト群
+   ================================ */
+
+/* 魔法発動時の画面全体フラッシュ */
+.cast-flash-effect {
+  animation: screenFlash 0.4s ease-out;
+}
+
+@keyframes screenFlash {
+  0% { background-color: #ffffff; }
+  100% { background-color: #1a1a2e; }
+}
+
+/* ダメージ時の画面揺れ（シェイク） */
+.shake-effect {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+/* 敵がダメージを受けた時の赤色フラッシュ */
+.damage-flash {
+  animation: damageFlash 0.5s ease-out;
+}
+
+@keyframes damageFlash {
+  0% { filter: brightness(1) sepia(0) hue-rotate(0deg) saturate(1); }
+  30% { filter: brightness(0.7) sepia(1) hue-rotate(-50deg) saturate(5) contrast(1.5); }
+  100% { filter: brightness(1) sepia(0) hue-rotate(0deg) saturate(1); }
+}
+
+/* 防御フェーズ時の画面全体の赤い警戒エフェクト */
+.defense-phase-bg {
+  box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.3);
+  transition: box-shadow 0.5s ease;
+}
+
+/* コンボ・JUSTボーナス演出 */
+.just-bonus-text {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 10px #ff00ff, 0 0 20px #00ffff, 0 0 30px #ffff00;
+  animation: justFlash 0.5s ease-in-out infinite alternate;
+  margin-left: 15px;
+  display: inline-block;
+}
+
+@keyframes justFlash {
+  0% { transform: scale(1) rotate(-5deg); filter: hue-rotate(0deg); }
+  100% { transform: scale(1.1) rotate(5deg); filter: hue-rotate(360deg); }
+}
+
+/* スタートモーダル用アニメーション */
+@keyframes pulseStart {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* トーストメッセージ用アニメーション */
+@keyframes fadeInOutToast {
+  0% { opacity: 0; transform: translate(-50%, 20px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -20px); }
+}

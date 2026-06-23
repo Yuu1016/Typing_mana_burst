@@ -1,0 +1,177 @@
+/* src/pagesCss/BattleComponents.css */
+
+/* ================================
+   各種コンポーネント
+   ================================ */
+
+/* HPバー */
+.hp-bar-bg {
+  width: 100%;
+  height: 20px;
+  background-color: #444;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease-out;
+}
+
+.player-hp { background-color: #4caf50; }
+.enemy-hp { background-color: #f44336; }
+
+/* カード */
+.card {
+  width: 120px;
+  height: 160px;
+  background-color: #4a4e69;
+  border: 3px solid #9a8c98;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  border-color: #ffeb3b;
+}
+
+.card-attr { font-size: 2rem; }
+.card-name { font-weight: bold; }
+.card-cost {
+  background-color: #22223b;
+  padding: 5px 15px;
+  border-radius: 15px;
+  color: #ffffff !important;
+}
+
+.selected-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background-color: #ffeb3b;
+  color: #000;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(255, 235, 59, 0.8);
+}
+
+/* アクションボタン */
+.action-button {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  color: white;
+}
+
+.cast-button { background-color: #3f51b5; }
+.cast-button:hover { background-color: #5c6bc0; }
+.run-button { background-color: #9e9e9e; }
+.run-button:hover { background-color: #bdbdbd; }
+
+/* バトル開始モーダル */
+.battle-start-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(26, 26, 46, 0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  cursor: pointer;
+}
+
+.battle-start-text {
+  font-size: 4rem;
+  color: #ffeb3b;
+  text-shadow: 0 0 20px rgba(255, 235, 59, 0.8);
+  animation: pulseStart 1.5s infinite;
+  margin: 0;
+}
+
+.battle-click-text {
+  color: #ffffff;
+  font-size: 1.2rem;
+  margin-top: 20px;
+  animation: blink 2s infinite;
+}
+
+/* タイマーゲージ */
+.timer-container {
+  width: 100%;
+  margin: 10px 0 20px 0;
+  text-align: center;
+}
+
+.timer-text {
+  color: #ffeb3b;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-shadow: 0 0 5px rgba(255, 235, 59, 0.5);
+}
+
+.timer-bar-bg {
+  width: 80%;
+  height: 10px;
+  background-color: #333;
+  border-radius: 5px;
+  margin: 0 auto;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+}
+
+.timer-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
+  transition: width 0.1s linear;
+}
+
+/* トーストメッセージ */
+.battle-message-toast {
+  position: absolute;
+  bottom: 260px; 
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(40, 40, 60, 0.95));
+  color: #fff;
+  padding: 15px 40px;
+  border: 2px solid #ffeb3b;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(255, 235, 59, 0.6), inset 0 0 10px rgba(255, 235, 59, 0.3);
+  pointer-events: none; 
+  animation: fadeInOutToast 3s forwards;
+}
+
+.battle-message-toast.danger {
+  border-color: #ff4b2b;
+  box-shadow: 0 0 20px rgba(255, 75, 43, 0.6), inset 0 0 10px rgba(255, 75, 43, 0.3);
+  color: #ff4b2b;
+}
+
+.battle-message-toast.success {
+  border-color: #4caf50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.6), inset 0 0 10px rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+}

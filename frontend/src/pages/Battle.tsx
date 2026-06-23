@@ -5,15 +5,20 @@ import { api } from "../API/apiClient";
 import { useTyping } from "../hooks/useTyping";
 import { getRandomWord } from "../utils/wordDictionary";
 import "../pagesCss/Battle.css";
+import "../pagesCss/BattleEffects.css"; 
+import "../pagesCss/BattleComponents.css";
 
 type BattlePhase = "SELECT" | "ATTACK_TYPING" | "DEFENSE_TYPING";
+
+// 💡 メッセージの種類を定義
+type MessageType = "info" | "success" | "danger";
 
 export default function Battle() {
   const [battleState, setBattleState] = useState<any>(null);
   const [userDecks, setUserDecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDeck, setSelectedDeck] = useState<any>(null);
-
+  
+  const [selectedDecks, setSelectedDecks] = useState<any[]>([]);
   const [phase, setPhase] = useState<BattlePhase>("SELECT");
   const [timeLeft, setTimeLeft] = useState(0); 
   const [maxTime, setMaxTime] = useState(0);   
@@ -26,10 +31,13 @@ export default function Battle() {
   const [enemyTakingDamage, setEnemyTakingDamage] = useState(false);
   const [playerTakingDamage, setPlayerTakingDamage] = useState(false);
 
+  // 💡 【追加】画面に表示するメッセージの管理
+  const [battleMessage, setBattleMessage] = useState<{ text: string; type: MessageType } | null>(null);
+
   const [currentWord, setCurrentWord] = useState("");
   const { typed, untyped, missCount, isCompleted, resetTyping } = useTyping(currentWord);
 
-  const MAX_MISS_LIMIT = 10; // 💡 ミス許容回数
+  const MAX_MISS_LIMIT = 10;
 
   useEffect(() => {
     const STAGE_ID = 1;
@@ -45,10 +53,18 @@ export default function Battle() {
       .catch((err) => console.error("バトル初期化エラー", err));
   }, []);
 
-  // タイマーダウン処理
+  // 💡 【追加】メッセージを表示し、3秒後に自動で消す関数
+  const showMessage = (text: string, type: MessageType = "info") => {
+    setBattleMessage({ text, type });
+    // cssのアニメーション（3s）に合わせて消す
+    setTimeout(() => {
+      setBattleMessage(null);
+    }, 3000); 
+  };
+
+
   useEffect(() => {
     if (phase === "SELECT" || timeLeft <= 0) return;
-
     const timerId = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 100) {
@@ -58,15 +74,12 @@ export default function Battle() {
         return prev - 100;
       });
     }, 100);
-
     return () => clearInterval(timerId);
   }, [phase, timeLeft]);
 
-  // 防衛フェーズ中のスコア加算
   useEffect(() => {
     if (phase === "DEFENSE_TYPING" && isCompleted) {
       setDefenseScore((prev) => prev + 1);
-      
       const defenseWords = ["BLOCK", "GUARD", "SHIELD", "CHARGE", "BARRIER", "REFLECT"];
       const nextWord = defenseWords[Math.floor(Math.random() * defenseWords.length)];
       setCurrentWord(nextWord);
@@ -74,97 +87,135 @@ export default function Battle() {
     }
   }, [isCompleted, phase]);
 
-  // タイポ（ミス）制限ペナルティの監視
+  const handleChantFailure = (message: string) => {
+    showMessage(message, "danger"); // 💡 alertから変更
+    
+    const simulatedPendingState = {
+      ...battleState,
+      remainingCost: battleState.remainingCost - totalSelectedCost,
+    };
+
+    setPendingState(simulatedPendingState);
+    setPhase("DEFENSE_TYPING");
+    setDefenseScore(0);
+    const firstWord = "SYSTEM DEFENSE";
+    setCurrentWord(firstWord);
+    resetTyping(firstWord);
+    setMaxTime(5000);
+    setTimeLeft(5000);
+  };
+
   useEffect(() => {
     if (phase === "ATTACK_TYPING" && missCount >= MAX_MISS_LIMIT) {
-      alert("MISS LIMIT EXCEEDED!! 集中力が切れ、詠唱が崩壊した！");
-      setPhase("SELECT");
-      setSelectedDeck(null);
-      setCurrentWord("");
-      resetTyping("");
-      setMaxTime(0);
-      setTimeLeft(0);
+      handleChantFailure("詠唱崩壊... 敵のターンへ移行します！");
     }
   }, [missCount, phase]);
 
-  // 時間切れの処理とダメージ計算
   useEffect(() => {
     if (timeLeft === 0 && maxTime > 0) {
       if (phase === "ATTACK_TYPING") {
-        alert("TIME UP... 詠唱に失敗した！");
-        setPhase("SELECT");
-        setSelectedDeck(null);
-        setCurrentWord("");
-        resetTyping("");
-        setMaxTime(0);
+        handleChantFailure("TIME UP... 詠唱失敗！");
       } 
       else if (phase === "DEFENSE_TYPING") {
         setPhase("SELECT");
         setMaxTime(0);
 
         if (pendingState) {
-          // 💡 【追加】ダメージカット（ガード）ロジック
-          // バックエンドが想定した本来のダメージ量
-          const intendedDamage = battleState.playerCurrentHp - pendingState.playerCurrentHp;
-          
-          // 防御スコア1につき、3ダメージカット！
-          const damageCut = defenseScore * 3;
-          let finalDamage = Math.max(0, intendedDamage - damageCut);
-          
-          const finalPlayerHp = battleState.playerCurrentHp - finalDamage;
+          const runDefense = async () => {
+            try {
+              const requestData = {
+                defenseScore: defenseScore,
+                currentState: pendingState
+              };
+              
+              const finalState = await api.executeDefense(requestData);
+              const damageTaken = pendingState.playerCurrentHp - finalState.playerCurrentHp;
 
-          // アニメーションと演出
-          if (finalDamage > 0) {
-            setPlayerTakingDamage(true);
-            setTimeout(() => setPlayerTakingDamage(false), 500);
-          } else if (intendedDamage > 0) {
-            // ダメージを完全に0に抑え込んだ場合
-            alert(`PERFECT GUARD!! 防御力で敵の攻撃(${intendedDamage}Dmg)を完全に弾き返した！`);
-          }
+              if (damageTaken > 0) {
+                setPlayerTakingDamage(true);
+                setTimeout(() => setPlayerTakingDamage(false), 500);
+              } else if (defenseScore > 0 && damageTaken === 0) {
+                showMessage("PERFECT GUARD!! 攻撃を完全に防いだ！", "success"); // 💡 alertから変更
+              }
 
-          // マナ回復ボーナス
-          const finalRemainingCost = Math.min(
-            pendingState.currentLimitCost, 
-            pendingState.remainingCost + defenseScore
-          );
+              setBattleState(finalState);
+              setPendingState(null);
+              setSelectedDecks([]);
+              setCurrentWord("");
+              resetTyping("");
 
-          setBattleState({
-            ...pendingState,
-            playerCurrentHp: finalPlayerHp, // 計算し直したHPで上書き
-            remainingCost: finalRemainingCost
-          });
-
-          setPendingState(null);
-          setSelectedDeck(null);
-          setCurrentWord("");
-          resetTyping("");
+              if (finalState.playerCurrentHp <= 0) {
+                showMessage("GAME OVER...", "danger"); // 💡 alertから変更
+                setTimeout(() => {
+                  window.location.href = "/home";
+                }, 2000); // メッセージを見せるために少し待ってから遷移
+              }
+            } catch (error) {
+              console.error("Defense API Error:", error);
+            }
+          };
+          runDefense();
         }
       }
     }
-  }, [timeLeft, maxTime, phase, pendingState, battleState, defenseScore]);
+  }, [timeLeft, maxTime, phase, pendingState, defenseScore]);
 
+
+  const totalSelectedCost = selectedDecks.reduce((sum, d) => sum + d.skill.cost, 0);
+  const justBonus = battleState && (totalSelectedCost === battleState.currentLimitCost && totalSelectedCost > 0);
+
+  const handleStartChanting = () => {
+    if (selectedDecks.length === 0) return;
+
+    let newWord = "";
+    let timeLimit = 0;
+    const isOvercast = selectedDecks.length === 1 && totalSelectedCost > battleState.remainingCost;
+
+    if (isOvercast) {
+      newWord = getRandomWord(selectedDecks[0].skill.cost) + " " + getRandomWord(selectedDecks[0].skill.cost);
+      timeLimit = 5000 + (selectedDecks[0].skill.cost * 1000); 
+    } else {
+      newWord = selectedDecks.map(d => getRandomWord(d.skill.cost)).join(" ");
+      timeLimit = 3000 + (totalSelectedCost * 1500);
+    }
+
+    setCurrentWord(newWord);
+    resetTyping(newWord);
+    setMaxTime(timeLimit);
+    setTimeLeft(timeLimit);
+    setPhase("ATTACK_TYPING");
+  };
 
   const handleCastSkill = async () => {
-    if (!isCompleted || !selectedDeck || phase !== "ATTACK_TYPING") return;
+    if (!isCompleted || selectedDecks.length === 0 || phase !== "ATTACK_TYPING") return;
 
     try {
       setTimeLeft(0);
       setMaxTime(0);
-
       setIsCasting(true);
       setTimeout(() => setIsCasting(false), 400);
 
-      const requestData = {
-        action: { userId: 1, slotNumber: selectedDeck.slotNumber },
-        currentState: battleState
+      const slotNumbers = selectedDecks.map(d => d.slotNumber);
+
+      const requestData = { 
+        action: { 
+          userId: 1, 
+          slotNumbers: slotNumbers,
+          justBonus: justBonus
+        }, 
+        currentState: battleState 
       };
 
-      const updatedState = await api.castSkillDirect(requestData);
+      const updatedState = await api.executeAttack(requestData);
+
+      if (justBonus && updatedState.enemyCurrentHp < battleState.enemyCurrentHp) {
+        showMessage("JUST BONUS!! ダメージ1.5倍！", "success"); // 💡 alertから変更
+      }
 
       setBattleState({
         ...battleState,
         enemyCurrentHp: updatedState.enemyCurrentHp,
-        remainingCost: battleState.remainingCost - selectedDeck.skill.cost
+        remainingCost: updatedState.remainingCost
       });
 
       if (updatedState.enemyCurrentHp < battleState.enemyCurrentHp) {
@@ -177,38 +228,33 @@ export default function Battle() {
           setPendingState(updatedState); 
           setPhase("DEFENSE_TYPING");
           setDefenseScore(0);
-          
           const firstWord = "SYSTEM DEFENSE";
           setCurrentWord(firstWord);
           resetTyping(firstWord);
-
-          setMaxTime(10000);
-          setTimeLeft(10000);
+          setMaxTime(5000);
+          setTimeLeft(5000);
         }, 1000); 
         
       } else {
         setTimeout(async () => {
           setBattleState(updatedState);
           if (updatedState.victory) {
-            alert("VICTORY!! 敵を倒した！");
+            showMessage("VICTORY!! 敵を倒した！", "success"); // 💡 alertから変更
             try {
-              await api.finishBattle({
-                userId: 1, stageId: 1, isVictory: true,
-                clearTurns: updatedState.turnCount,
-                totalTypedChars: 100, missedChars: 5
-              });
+              await api.finishBattle({ userId: 1, stageId: 1, isVictory: true, clearTurns: updatedState.turnCount, totalTypedChars: 100, missedChars: 5 });
             } catch (e) { console.error(e); }
-            window.location.href = "/home"; 
+            setTimeout(() => window.location.href = "/home", 2500); // 勝利の余韻
           } else {
-            alert("GAME OVER...");
-            window.location.href = "/home";
+            showMessage("GAME OVER...", "danger"); // 💡 alertから変更
+            setTimeout(() => window.location.href = "/home", 2500);
           }
         }, 1000);
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Cast Error:", error);
-      alert("魔法の発動に失敗しました");
+      // バックエンドから送られてきたエラー理由を画面に表示
+      showMessage(error.message || "魔法の発動に失敗しました", "danger");
     }
   };
 
@@ -227,53 +273,52 @@ export default function Battle() {
         </div>
       )}
 
-      {/* ===== 上部：ビジュアル＆ステータスエリア ===== */}
+      {/* 💡 【追加】トーストメッセージエリア */}
+      {battleMessage && (
+        <div className={`battle-message-toast ${battleMessage.type}`}>
+          {battleMessage.text}
+        </div>
+      )}
+
       <div className="visual-area">
         <div className={`character player ${playerTakingDamage ? "shake-effect damage-flash" : ""}`}>
           <h3>Player</h3>
-          <div className="hp-bar-bg">
-            <div className="hp-bar-fill player-hp" style={{ width: `${(battleState.playerCurrentHp / battleState.playerMaxHp) * 100}%` }}></div>
-          </div>
+          <div className="hp-bar-bg"><div className="hp-bar-fill player-hp" style={{ width: `${(battleState.playerCurrentHp / battleState.playerMaxHp) * 100}%` }}></div></div>
           <p>HP: {battleState.playerCurrentHp} / {battleState.playerMaxHp}</p>
         </div>
 
         <div className={`character enemy ${enemyTakingDamage ? "shake-effect damage-flash" : ""}`}>
           <h3>{battleState.enemyName}</h3>
-          <div className="hp-bar-bg">
-            <div className="hp-bar-fill enemy-hp" style={{ width: `${(battleState.enemyCurrentHp / battleState.enemyMaxHp) * 100}%` }}></div>
-          </div>
+          <div className="hp-bar-bg"><div className="hp-bar-fill enemy-hp" style={{ width: `${(battleState.enemyCurrentHp / battleState.enemyMaxHp) * 100}%` }}></div></div>
           <p>HP: {battleState.enemyCurrentHp} / {battleState.enemyMaxHp}</p>
         </div>
       </div>
 
-      {/* タイマーゲージ＆防衛スコア */}
       {phase !== "SELECT" && maxTime > 0 && (
         <div className="timer-container">
           <div className="timer-text">
-            {phase === "ATTACK_TYPING" ? "CASTING TIME" : `DEFENSE TIME - MANA CHARGE x${defenseScore}`} 
-            : {(timeLeft / 1000).toFixed(1)}s
+            {phase === "ATTACK_TYPING" ? "CASTING TIME" : `DEFENSE TIME - MANA CHARGE x${defenseScore}`} : {(timeLeft / 1000).toFixed(1)}s
           </div>
           <div className="timer-bar-bg">
-            <div 
-              className="timer-bar-fill" 
-              style={{ 
-                width: `${(timeLeft / maxTime) * 100}%`,
-                background: phase === "DEFENSE_TYPING" ? "linear-gradient(90deg, #00c6ff 0%, #0072ff 100%)" : undefined
-              }}
-            ></div>
+            <div className="timer-bar-fill" style={{ width: `${(timeLeft / maxTime) * 100}%`, background: phase === "DEFENSE_TYPING" ? "linear-gradient(90deg, #00c6ff 0%, #0072ff 100%)" : undefined }}></div>
           </div>
         </div>
       )}
 
-      {/* ===== 中央：タイピングエリア ===== */}
       <div className="typing-area">
         <div className="cost-display">
-          <h2>REMAIN MANA: <span style={{ color: "#ffeb3b" }}>{battleState.remainingCost}</span> / <span className="limit-cost">{battleState.currentLimitCost}</span></h2>
+          <h2>
+            REMAIN MANA: <span style={{ color: "#ffeb3b" }}>{battleState.remainingCost}</span> / <span className="limit-cost">{battleState.currentLimitCost}</span>
+            {justBonus && phase === "SELECT" && <span className="just-bonus-text">JUST!!</span>}
+          </h2>
         </div>
         
         <div className="word-display">
-          {currentWord === "" ? (
-            <h1 style={{ color: "#9a8c98", fontSize: "2rem", letterSpacing: "5px" }}>SELECT MAGIC...</h1>
+          {phase === "SELECT" ? (
+            <div>
+              <h1 style={{ color: "#9a8c98", fontSize: "1.8rem", letterSpacing: "5px" }}>SELECT MAGIC...</h1>
+              <p style={{ color: "#ffeb3b" }}>Selected Cost: {totalSelectedCost}</p>
+            </div>
           ) : (
             <h1>
               <span style={{ color: phase === "DEFENSE_TYPING" ? "#0072ff" : "#555" }}>{typed}</span>
@@ -281,72 +326,68 @@ export default function Battle() {
             </h1>
           )}
           
-          {/* 💡 ミス回数のUIを強化！制限が近づくと赤くなります */}
           <p style={{ color: missCount >= 7 && phase === "ATTACK_TYPING" ? "#ff4b2b" : "inherit", fontWeight: "bold" }}>
             Miss: {missCount} {phase === "ATTACK_TYPING" && `/ ${MAX_MISS_LIMIT}`}
           </p>
-          
-          {isCompleted && phase === "ATTACK_TYPING" && <p style={{ color: "#4caf50", fontWeight: "bold" }}>TYPING CLEAR!!</p>}
         </div>
       </div>
 
-      {/* ===== 下部：手札エリア ===== */}
       <div className="hand-area">
         <div className="cards">
           {userDecks.map((deck) => {
-            const isSelected = selectedDeck?.id === deck.id;
-            const isLackCost = battleState.remainingCost < deck.skill.cost;
+            const selectIndex = selectedDecks.findIndex(d => d.id === deck.id);
+            const isSelected = selectIndex !== -1;
+            const canSelect = isSelected || selectedDecks.length === 0 || (totalSelectedCost + deck.skill.cost <= battleState.remainingCost);
 
             return (
               <div 
                 key={deck.id} 
                 className="card" 
                 style={{
-                  borderColor: isSelected ? "#ffeb3b" : (isLackCost ? "#ff4b2b" : "#9a8c98"),
+                  position: "relative",
+                  borderColor: isSelected ? "#ffeb3b" : (!canSelect ? "#555" : "#9a8c98"),
                   transform: isSelected ? "translateY(-10px)" : "none",
-                  boxShadow: isSelected ? "0 0 15px rgba(255, 235, 59, 0.5)" : (isLackCost ? "0 0 10px rgba(255, 75, 43, 0.3)" : "none"),
-                  cursor: phase === "SELECT" ? "pointer" : "not-allowed",
+                  boxShadow: isSelected ? "0 0 15px rgba(255, 235, 59, 0.5)" : "none",
+                  opacity: !canSelect && !isSelected ? 0.4 : 1,
+                  cursor: phase === "SELECT" && canSelect ? "pointer" : "not-allowed",
                   transition: "all 0.2s"
                 }}
                 onClick={() => {
-                  if (phase === "SELECT") {
-                    setSelectedDeck(deck);
-                    let newWord = "";
-                    let timeLimit = 0;
-
-                    if (isLackCost) {
-                      newWord = getRandomWord(deck.skill.cost) + " " + getRandomWord(deck.skill.cost);
-                      timeLimit = 5000 + (deck.skill.cost * 1000); 
+                  if (phase === "SELECT" && canSelect) {
+                    if (isSelected) {
+                      setSelectedDecks(prev => prev.filter(d => d.id !== deck.id));
                     } else {
-                      newWord = getRandomWord(deck.skill.cost);
-                      timeLimit = 3000 + (deck.skill.cost * 1500);
+                      setSelectedDecks(prev => [...prev, deck]);
                     }
-
-                    setCurrentWord(newWord);
-                    resetTyping(newWord);
-                    setMaxTime(timeLimit);
-                    setTimeLeft(timeLimit);
-                    setPhase("ATTACK_TYPING");
                   }
                 }}
               >
+                {isSelected && <div className="selected-badge">{selectIndex + 1}</div>}
                 <div className="card-name" style={{ fontSize: "0.8em", textAlign: "center" }}>{deck.skill.skillName}</div>
-                <div className="card-cost" style={{ marginTop: "10px", color: isLackCost ? "#ff4b2b" : "#fff" }}>
-                  Cost: {deck.skill.cost} {isLackCost && <span style={{ fontSize: "0.7em" }}><br/>OVERCAST!</span>}
-                </div>
+                <div className="card-cost" style={{ marginTop: "10px", color: "#fff" }}>Cost: {deck.skill.cost}</div>
               </div>
             );
           })}
         </div>
 
         <div className="actions" style={{ marginTop: "20px" }}>
-          <button 
-            className="action-button cast-button" 
-            disabled={!isCompleted || phase !== "ATTACK_TYPING"}
-            onClick={handleCastSkill}
-          >
-            {isCompleted && phase === "ATTACK_TYPING" ? "CAST! (Click)" : "Select & Typing..."}
-          </button>
+          {phase === "SELECT" ? (
+             <button 
+               className="action-button cast-button" 
+               disabled={selectedDecks.length === 0}
+               onClick={handleStartChanting}
+             >
+               {selectedDecks.length > 0 ? "START CHANTING!" : "Select Cards..."}
+             </button>
+          ) : (
+             <button 
+               className="action-button cast-button" 
+               disabled={!isCompleted || phase !== "ATTACK_TYPING"}
+               onClick={handleCastSkill}
+             >
+               {isCompleted && phase === "ATTACK_TYPING" ? "CAST! (Click)" : "Typing..."}
+             </button>
+          )}
         </div>
       </div>
     </div>

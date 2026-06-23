@@ -14,6 +14,7 @@ import com.typinggame.backendSpr.Entity.UserDeck;
 import com.typinggame.backendSpr.Repository.StageRepository;
 import com.typinggame.backendSpr.Repository.UserRepository;
 import com.typinggame.backendSpr.RequestDTO.BattleResultRequestDto;
+import com.typinggame.backendSpr.RequestDTO.DefenseRequestDto;
 import com.typinggame.backendSpr.RequestDTO.SkillCastRequestDto;
 import com.typinggame.backendSpr.ResponseDTO.BattleStateDto;
 import com.typinggame.backendSpr.Strategy.BattleContext;
@@ -68,86 +69,108 @@ public class BattleService {
     }
         
     /**
-     * スキル発動処理（ターンの進行）
-     * 画面からのリクエストを受け取り、現在のバトル状態にスキル効果を適用する。
-     *
-     * @param request 画面から送られてきた発動指示（誰が、どのスロットを使ったか）
-     * @param currentState 現在のバトルの状態（前のターンが終わった時点でのHP等）
-     * @return スキル発動後の新しいバトル状態
+     * 攻撃フェーズの処理（複数スキル発動とJUSTボーナス計算）
      */
-    public BattleStateDto executeTurn(SkillCastRequestDto request, BattleStateDto currentState) {
-    	if(currentState.isBattleFinished()) {
-    		throw new IllegalStateException("このバトルは既に終了しています");
-    	}
-    	
-    	// 今のステージ情報を取得
-    	Stage stage = stageRepository.findById(currentState.getStageId())
-                .orElseThrow(() -> new IllegalArgumentException("ステージが見つかりません ID: " + currentState.getStageId()));
-    	
-    	//ユーザー情報から発動するスキル情報を取得
-    	User user = userService.getUserProfile(request.getUserId());
-    	UserDeck targetDeck = user.getUserDecks().stream()
-    			 .filter(deck -> deck.getSlotNumber() == request.getSlotNumber())
-    			 .findFirst()
-    			 .orElseThrow(() -> new IllegalArgumentException("指定されたスロットにスキルがセットされていません"));
-    	
-    	Skill skillToCast = targetDeck.getSkill();
-    	
-    	//コストチェック
-    	if(currentState.getRemainingCost() < skillToCast.getCost()) {
-    		throw new IllegalStateException("コストが足りません！");
-    	}
-    	
-    	//コスト消費
-    	currentState.setRemainingCost(currentState.getRemainingCost() - skillToCast.getCost());
-    	
-    	//strategyが計算しやすいようにデータを詰める
-    	BattleContext context = new BattleContext(
-    			currentState.getPlayerCurrentHp(),
-    			currentState.getPlayerMaxHp(),
-    			currentState.getEnemyCurrentHp()
-    	);
-    	
-    	//factoryが（DamageStrategyを呼ぶ）計算を任せる
-    	EffectType effectTypeEnum = EffectType.fromString(skillToCast.getEffectType());
-    	SkillEffectStrategy strategy = skillEffectFactory.getStrategy(effectTypeEnum);
-    	
-    	strategy.apply(skillToCast, context);    	
-    	
-    	currentState.setPlayerCurrentHp(context.getPlayerCurrentHp());
-    	currentState.setEnemyCurrentHp(context.getEnemyCurrentHp());
-    	
-    	//敵の反撃と勝敗判定ロジック
-    	if(currentState.getEnemyCurrentHp() <= 0) {
-            // 敵を倒した！（プレイヤーの勝利）
-    		currentState.setEnemyCurrentHp(0);
-    		currentState.setBattleFinished(true);
-    		currentState.setVictory(true);
-    	} else {
-            // 敵が生き残っていたら反撃してくる！（一旦シンプルに固定で10ダメージ与えてくるとします）
-            // ※もし Stage エンティティに enemyAttack があれば、それを引いてください！
-            int newPlayerHp = currentState.getPlayerCurrentHp() - stage.getEnemyAttack();
-            currentState.setPlayerCurrentHp(newPlayerHp);
-
-            // 反撃の結果、プレイヤーが倒れた場合
-            if (currentState.getPlayerCurrentHp() <= 0) {
-                currentState.setPlayerCurrentHp(0);
-                currentState.setBattleFinished(true);
-                currentState.setVictory(false);
-            } else {
-            	currentState.setTurnCount(currentState.getTurnCount() + 1);
-            	
-            	int nextLimit = currentState.getCurrentLimitCost() + 1;
-            	if(nextLimit > 10) {
-            		nextLimit = 10;
-            	}
-            	
-            	currentState.setCurrentLimitCost(nextLimit); 
-            	currentState.setRemainingCost(nextLimit);            }
+    public BattleStateDto executeAttack(SkillCastRequestDto request, BattleStateDto currentState) {
+        if(currentState.isBattleFinished()) {
+            throw new IllegalStateException("このバトルは既に終了しています");
         }
-    		
-    	return currentState;
-    	
+        
+        User user = userService.getUserProfile(request.getUserId());
+        BattleContext context = new BattleContext(
+                currentState.getPlayerCurrentHp(),
+                currentState.getPlayerMaxHp(),
+                currentState.getEnemyCurrentHp()
+        );
+        
+        int totalCost = 0;
+        
+        // 複数スキルをループ処理
+        for (Integer slotNumber : request.getSlotNumbers()) {
+            UserDeck targetDeck = user.getUserDecks().stream()
+                     .filter(deck -> deck.getSlotNumber() == slotNumber)
+                     .findFirst()
+                     .orElseThrow(() -> new IllegalArgumentException("指定されたスロットにスキルがセットされていません"));
+            
+            Skill skillToCast = targetDeck.getSkill();
+            totalCost += skillToCast.getCost();
+            
+            EffectType effectTypeEnum = EffectType.fromString(skillToCast.getEffectType());
+            SkillEffectStrategy strategy = skillEffectFactory.getStrategy(effectTypeEnum);
+            strategy.apply(skillToCast, context);
+        }
+        
+        // コスト消費（オーバーキャストを許容するため、そのまま引く）
+        currentState.setRemainingCost(currentState.getRemainingCost() - totalCost);
+        
+        //  JUSTボーナス計算
+        if (request.isJustBonus()) {
+            int originalEnemyHp = currentState.getEnemyCurrentHp();
+            int newEnemyHp = context.getEnemyCurrentHp();
+            int rawDamage = originalEnemyHp - newEnemyHp;
+            
+            if (rawDamage > 0) {
+                int bonusDamage = (int) (rawDamage * 0.5); // 1.5倍の追加ダメージ
+                context.damageEnemy(bonusDamage);
+                System.out.println("【JUST BONUS発動！】追加ダメージ: " + bonusDamage);
+            }
+        }
+        
+        currentState.setPlayerCurrentHp(context.getPlayerCurrentHp());
+        currentState.setEnemyCurrentHp(context.getEnemyCurrentHp());
+        
+        // 勝敗判定（敵を倒したか）
+        if(currentState.getEnemyCurrentHp() <= 0) {
+            currentState.setEnemyCurrentHp(0);
+            currentState.setBattleFinished(true);
+            currentState.setVictory(true);
+        }
+        
+        return currentState;
+    }
+
+    /**
+     * 防衛フェーズの処理（ダメージカット、ターン進行、マナ回復）
+     */
+    public BattleStateDto executeDefense(DefenseRequestDto request) {
+        BattleStateDto currentState = request.getCurrentState();
+        
+        if(currentState.isBattleFinished()) {
+            throw new IllegalStateException("このバトルは既に終了しています");
+        }
+        
+        Stage stage = stageRepository.findById(currentState.getStageId())
+                .orElseThrow(() -> new IllegalArgumentException("ステージが見つかりません ID: " + currentState.getStageId()));
+        
+        // ダメージカット計算
+        int intendedDamage = stage.getEnemyAttack();
+        int damageCut = request.getDefenseScore() * 3; // スコア1につき3軽減 後々レベルアップでカット率が増加するように変更
+        int finalDamage = Math.max(0, intendedDamage - damageCut);
+        
+        int newPlayerHp = Math.max(0, currentState.getPlayerCurrentHp() - finalDamage);
+        currentState.setPlayerCurrentHp(newPlayerHp);
+        
+        // プレイヤーが倒れた場合
+        if (currentState.getPlayerCurrentHp() <= 0) {
+            currentState.setPlayerCurrentHp(0);
+            currentState.setBattleFinished(true);
+            currentState.setVictory(false);
+        } else {
+            // 生き残ったらターン進行とマナ回復
+            currentState.setTurnCount(currentState.getTurnCount() + 1);
+            
+            int nextLimit = currentState.getCurrentLimitCost() + 1;
+            if(nextLimit > 10) {
+                nextLimit = 10;
+            }
+            currentState.setCurrentLimitCost(nextLimit);
+            
+            // 防衛スコアに応じた追加マナ回復
+            int newRemainingCost = Math.min(nextLimit, currentState.getRemainingCost() + request.getDefenseScore());
+            currentState.setRemainingCost(newRemainingCost);
+        }
+        
+        return currentState;
     }
     
     /**

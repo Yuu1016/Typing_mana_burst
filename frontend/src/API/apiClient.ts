@@ -67,9 +67,16 @@ export const api = {
       }),
     }),
 
-  // 引数で直接リクエストボディを受け取る
-  castSkillDirect: (requestBody: any) =>
-    fetchApi("/battles/cast", {
+  //攻撃フェーズ用（複数スキルとJUSTボーナスを一括送信）
+  executeAttack: (requestBody: any) =>
+    fetchApi("/battles/attack", {
+      method: "POST",
+      body: JSON.stringify(requestBody),
+    }),
+
+  //防衛フェーズ・詠唱失敗用（スコアを送信して結果を受け取る！）
+  executeDefense: (requestBody: any) =>
+    fetchApi("/battles/defense", {
       method: "POST",
       body: JSON.stringify(requestBody),
     }),
