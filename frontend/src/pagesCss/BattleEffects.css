@@ -77,3 +77,21 @@
   85% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -20px); }
 }
+
+/* 文字が右から左のデッドラインへ流れるアニメーション */
+@keyframes flowRightToLeft {
+ 0% { 
+    left: 100%; 
+    transform: translateX(0); 
+  }
+  100% { 
+    left: 15%; 
+    transform: translateX(-100); 
+  }
+}
+
+.animate-flow {
+  animation-name: flowRightToLeft;
+  animation-timing-function: linear; /* 一定の速度で流れるようにする */
+  animation-fill-mode: forwards;
+}

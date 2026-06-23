@@ -22,13 +22,13 @@
 .player-hp { background-color: #4caf50; }
 .enemy-hp { background-color: #f44336; }
 
-/* カード */
+/* カード（魔法書風） */
 .card {
   width: 120px;
   height: 160px;
-  background-color: #4a4e69;
-  border: 3px solid #9a8c98;
-  border-radius: 8px;
+  background-color: #000000; /* 黒背景 */
+  border: 3px solid #ffffff; /* 白枠 */
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,12 +42,15 @@
   border-color: #ffeb3b;
 }
 
-.card-attr { font-size: 2rem; }
-.card-name { font-weight: bold; }
+.card-name { 
+  font-weight: bold; 
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
 .card-cost {
-  background-color: #22223b;
+  background-color: transparent;
   padding: 5px 15px;
-  border-radius: 15px;
   color: #ffffff !important;
 }
 
@@ -67,22 +70,33 @@
   box-shadow: 0 0 10px rgba(255, 235, 59, 0.8);
 }
 
-/* アクションボタン */
+/* アクションボタン（ドラクエのコマンド風） */
 .action-button {
   padding: 15px 30px;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: bold;
-  border: none;
-  border-radius: 5px;
+  font-family: 'DotGothic16', monospace;
+  background-color: #000000;
+  border: 4px double #ffffff;
+  color: white;
+  border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
-  color: white;
+  transition: all 0.2s;
 }
 
-.cast-button { background-color: #3f51b5; }
-.cast-button:hover { background-color: #5c6bc0; }
-.run-button { background-color: #9e9e9e; }
-.run-button:hover { background-color: #bdbdbd; }
+.action-button:hover:not(:disabled) {
+  background-color: #333333;
+  transform: scale(1.05);
+}
+
+.action-button:disabled {
+  border-color: #555;
+  color: #555;
+  cursor: not-allowed;
+}
+
+
 
 /* バトル開始モーダル */
 .battle-start-modal {
@@ -143,35 +157,85 @@
   transition: width 0.1s linear;
 }
 
-/* トーストメッセージ */
+/* トーストメッセージ（ドラクエのメッセージウィンドウ風） */
 .battle-message-toast {
   position: absolute;
   bottom: 260px; 
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(40, 40, 60, 0.95));
-  color: #fff;
-  padding: 15px 40px;
-  border: 2px solid #ffeb3b;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 20px 50px;
+  border: 6px double #ffffff; /* メッセージ枠も二重線 */
   border-radius: 8px;
-  font-size: 1.5rem;
-  font-weight: bold;
-  letter-spacing: 2px;
+  font-size: 1.8rem;
+  font-family: 'DotGothic16', monospace;
   text-align: center;
   z-index: 1000;
-  box-shadow: 0 0 20px rgba(255, 235, 59, 0.6), inset 0 0 10px rgba(255, 235, 59, 0.3);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
   pointer-events: none; 
   animation: fadeInOutToast 3s forwards;
 }
 
-.battle-message-toast.danger {
-  border-color: #ff4b2b;
-  box-shadow: 0 0 20px rgba(255, 75, 43, 0.6), inset 0 0 10px rgba(255, 75, 43, 0.3);
-  color: #ff4b2b;
+/* トーストのエラー色・成功色も、文字色だけでレトロに表現 */
+.battle-message-toast.danger { color: #ff4b2b; }
+.battle-message-toast.success { color: #4caf50; }
+
+/* ================================
+   タイピングレーン（太鼓の達人風）
+   ================================ */
+
+.typing-lane {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  background-color: #e0e0e0; /* レーンの背景（白/グレー） */
+  display: flex;
+  align-items: center;
+  overflow: hidden; /* 枠外の文字を隠す */
+  border-top: 4px solid #fff;
+  border-bottom: 4px solid #fff;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
 }
 
-.battle-message-toast.success {
-  border-color: #4caf50;
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.6), inset 0 0 10px rgba(76, 175, 80, 0.3);
-  color: #4caf50;
+/* 締切ライン（デッドライン） */
+.deadline-line {
+  position: absolute;
+  left: 15%; /* 左端から15%の位置を締切に設定 */
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #ff4b2b;
+  box-shadow: 0 0 15px #ff4b2b, 0 0 5px #ff4b2b;
+  z-index: 10;
+}
+
+/* 待機中のテキスト（中央固定） */
+.static-word {
+  width: 100%;
+  text-align: center;
+  color: #333;
+}
+
+/* 流れてくる文字のコンテナ */
+.flowing-word-container {
+  position: absolute;
+  left: 100%; /* 初期位置は画面の右枠外 */
+  white-space: nowrap;
+}
+
+.flowing-word-container h1 {
+  font-size: 3.5rem;
+  letter-spacing: 5px;
+  margin: 0;
+}
+
+/* タイピング済みの文字色（ソリッドテーマに合わせて変更） */
+.typed-text {
+  color: #0072ff; /* 打った文字は青や黄色など目立つ色に */
+  text-shadow: 0 0 10px rgba(0, 114, 255, 0.5);
+}
+
+.untyped-text {
+  color: #111; /* まだ打ってない文字は黒 */
 }

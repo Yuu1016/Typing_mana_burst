@@ -1,45 +1,78 @@
 /* src/pagesCss/Battle.css */
 
+/* 💡 ドラクエ風の日本語ドットフォントを読み込む */
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
 /* バトル画面全体のコンテナ */
 .battle-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #1a1a2e;
-  color: white;
-  font-family: monospace;
+  background-color: #000000; /* 完全な黒背景 */
+  color: #ffffff;
+  font-family: 'DotGothic16', monospace; /* 💡 ドットフォントを適用 */
   padding: 20px;
   box-sizing: border-box;
 }
 
 /* ================================
-   上部：ビジュアルエリア
+   上部：ビジュアルエリア（左右分割）
    ================================ */
 .visual-area {
   display: flex;
   justify-content: space-between;
-  flex: 1;
-  padding: 20px;
-  border: 2px solid #4a4e69;
-  border-radius: 8px;
-  background-color: #22223b;
+  height: 35vh;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  gap: 20px;
 }
 
+/* 💡 ドラクエ風ウィンドウ（黒背景・白の二重線） */
 .character {
-  width: 40%;
-  text-align: center;
+  width: 45%;
+  background-color: #000000;
+  color: #ffffff;
+  border: 6px double #ffffff; /* 二重線の白枠 */
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.character h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
 }
 
 /* ================================
    中央：タイピングエリア
    ================================ */
 .typing-area {
-  text-align: center;
-  padding: 30px 0;
-  flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
+  margin: 30px 0;
+}
+
+/* 💡 マナ表示部分を明示的に白文字にして視認性を高める */
+.cost-display {
+  margin-bottom: 10px;
+  background-color: rgba(0, 0, 0, 0.7); /* 少し背景を敷く */
+  padding: 5px 20px;
+  border-radius: 10px;
+}
+
+.cost-display h2 {
+  color: #ffffff !important;
+  font-size: 1.8rem;
+  margin: 0;
+  text-shadow: 2px 2px 0 #000; /* 黒の縁取りで文字をくっきりさせる */
 }
 
 .limit-cost {
@@ -47,26 +80,20 @@
   font-size: 1.5em;
 }
 
-.cost-display h2 {
-  color: #ffffff !important;
-}
-
-.word-display h1 {
-  font-size: 4rem;
-  letter-spacing: 5px;
-  margin: 0;
-  color: #e0e1dd;
-}
-
 /* ================================
    下部：手札エリア
    ================================ */
+/* 💡 ドラクエ風ウィンドウ（黒背景・白の二重線） */
 .hand-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+  background-color: #000000;
+  border: 6px double #ffffff; /* 二重線の白枠 */
+  border-radius: 8px;
+  padding: 20px;
 }
 
 .cards {

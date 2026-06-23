@@ -9,8 +9,6 @@ import "../pagesCss/BattleEffects.css";
 import "../pagesCss/BattleComponents.css";
 
 type BattlePhase = "SELECT" | "ATTACK_TYPING" | "DEFENSE_TYPING";
-
-// 💡 メッセージの種類を定義
 type MessageType = "info" | "success" | "danger";
 
 export default function Battle() {
@@ -31,11 +29,11 @@ export default function Battle() {
   const [enemyTakingDamage, setEnemyTakingDamage] = useState(false);
   const [playerTakingDamage, setPlayerTakingDamage] = useState(false);
 
-  // 💡 【追加】画面に表示するメッセージの管理
   const [battleMessage, setBattleMessage] = useState<{ text: string; type: MessageType } | null>(null);
 
   const [currentWord, setCurrentWord] = useState("");
   const { typed, untyped, missCount, isCompleted, resetTyping } = useTyping(currentWord);
+  const [flowSpeed, setFlowSpeed] = useState(3500);
 
   const MAX_MISS_LIMIT = 10;
 
@@ -53,15 +51,16 @@ export default function Battle() {
       .catch((err) => console.error("バトル初期化エラー", err));
   }, []);
 
-  // 💡 【追加】メッセージを表示し、3秒後に自動で消す関数
+  // 💡 【超重要】メッセージ表示を「Promise」化し、3秒待てるように進化！
   const showMessage = (text: string, type: MessageType = "info") => {
-    setBattleMessage({ text, type });
-    // cssのアニメーション（3s）に合わせて消す
-    setTimeout(() => {
-      setBattleMessage(null);
-    }, 3000); 
+    return new Promise<void>((resolve) => {
+      setBattleMessage({ text, type });
+      setTimeout(() => {
+        setBattleMessage(null);
+        resolve(); // 3秒経ったら「終わったよ！」と知らせる
+      }, 3000); 
+    });
   };
-
 
   useEffect(() => {
     if (phase === "SELECT" || timeLeft <= 0) return;
@@ -77,6 +76,8 @@ export default function Battle() {
     return () => clearInterval(timerId);
   }, [phase, timeLeft]);
 
+
+  //ディフェンスターン
   useEffect(() => {
     if (phase === "DEFENSE_TYPING" && isCompleted) {
       setDefenseScore((prev) => prev + 1);
@@ -87,8 +88,17 @@ export default function Battle() {
     }
   }, [isCompleted, phase]);
 
-  const handleChantFailure = (message: string) => {
-    showMessage(message, "danger"); // 💡 alertから変更
+  // 💡 詠唱失敗時も await でメッセージ終了を待つ！
+  const handleChantFailure = async (message: string) => {
+    setTimeLeft(0);
+    setMaxTime(0);
+    
+    // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+    setCurrentWord("");
+    resetTyping("");
+
+    // ここで3秒間処理が一時停止します
+    await showMessage(message, "danger"); 
     
     const simulatedPendingState = {
       ...battleState,
@@ -101,23 +111,25 @@ export default function Battle() {
     const firstWord = "SYSTEM DEFENSE";
     setCurrentWord(firstWord);
     resetTyping(firstWord);
-    setMaxTime(5000);
-    setTimeLeft(5000);
+    setMaxTime(8000);
+    setTimeLeft(8000);
+    setFlowSpeed(3000);
   };
 
+  // ミスオーバー（maxTime > 0 を条件に追加し、重複発動を防ぐ）
   useEffect(() => {
-    if (phase === "ATTACK_TYPING" && missCount >= MAX_MISS_LIMIT) {
+    if (phase === "ATTACK_TYPING" && missCount >= MAX_MISS_LIMIT && maxTime > 0) {
       handleChantFailure("詠唱崩壊... 敵のターンへ移行します！");
     }
-  }, [missCount, phase]);
+  }, [missCount, phase, maxTime]);
 
+  // 時間切れ時
   useEffect(() => {
     if (timeLeft === 0 && maxTime > 0) {
       if (phase === "ATTACK_TYPING") {
         handleChantFailure("TIME UP... 詠唱失敗！");
       } 
       else if (phase === "DEFENSE_TYPING") {
-        setPhase("SELECT");
         setMaxTime(0);
 
         if (pendingState) {
@@ -130,14 +142,27 @@ export default function Battle() {
               
               const finalState = await api.executeDefense(requestData);
               const damageTaken = pendingState.playerCurrentHp - finalState.playerCurrentHp;
+              
+              // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+              setCurrentWord("");
+              resetTyping("");
 
+              // 💡 防衛時のメッセージも await で待つ！
               if (damageTaken > 0) {
+                // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+                setCurrentWord("");
+                resetTyping("");
                 setPlayerTakingDamage(true);
-                setTimeout(() => setPlayerTakingDamage(false), 500);
+                await showMessage(`敵の攻撃！ ${damageTaken} のダメージ！`, "danger");
+                setPlayerTakingDamage(false);
               } else if (defenseScore > 0 && damageTaken === 0) {
-                showMessage("PERFECT GUARD!! 攻撃を完全に防いだ！", "success"); // 💡 alertから変更
+                // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+                setCurrentWord("");
+                resetTyping("");
+                await showMessage("PERFECT GUARD!! 攻撃を完全に防いだ！", "success");
               }
 
+              setPhase("SELECT"); // メッセージが消えてからSELECTに戻す
               setBattleState(finalState);
               setPendingState(null);
               setSelectedDecks([]);
@@ -145,10 +170,8 @@ export default function Battle() {
               resetTyping("");
 
               if (finalState.playerCurrentHp <= 0) {
-                showMessage("GAME OVER...", "danger"); // 💡 alertから変更
-                setTimeout(() => {
-                  window.location.href = "/home";
-                }, 2000); // メッセージを見せるために少し待ってから遷移
+                await showMessage("GAME OVER...", "danger");
+                window.location.href = "/home";
               }
             } catch (error) {
               console.error("Defense API Error:", error);
@@ -171,6 +194,7 @@ export default function Battle() {
     let timeLimit = 0;
     const isOvercast = selectedDecks.length === 1 && totalSelectedCost > battleState.remainingCost;
 
+    //タイピング時間操作
     if (isOvercast) {
       newWord = getRandomWord(selectedDecks[0].skill.cost) + " " + getRandomWord(selectedDecks[0].skill.cost);
       timeLimit = 5000 + (selectedDecks[0].skill.cost * 1000); 
@@ -205,11 +229,16 @@ export default function Battle() {
         }, 
         currentState: battleState 
       };
+      
+      // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+      setCurrentWord("");
+      resetTyping("");
 
       const updatedState = await api.executeAttack(requestData);
 
+      // 💡 JUSTボーナスも await で待つ！
       if (justBonus && updatedState.enemyCurrentHp < battleState.enemyCurrentHp) {
-        showMessage("JUST BONUS!! ダメージ1.5倍！", "success"); // 💡 alertから変更
+        await showMessage("JUST BONUS!! ダメージ1.5倍！", "success"); 
       }
 
       setBattleState({
@@ -231,29 +260,31 @@ export default function Battle() {
           const firstWord = "SYSTEM DEFENSE";
           setCurrentWord(firstWord);
           resetTyping(firstWord);
-          setMaxTime(5000);
-          setTimeLeft(5000);
+          setMaxTime(8000);
+          setTimeLeft(8000);
         }, 1000); 
         
       } else {
-        setTimeout(async () => {
-          setBattleState(updatedState);
-          if (updatedState.victory) {
-            showMessage("VICTORY!! 敵を倒した！", "success"); // 💡 alertから変更
-            try {
-              await api.finishBattle({ userId: 1, stageId: 1, isVictory: true, clearTurns: updatedState.turnCount, totalTypedChars: 100, missedChars: 5 });
-            } catch (e) { console.error(e); }
-            setTimeout(() => window.location.href = "/home", 2500); // 勝利の余韻
-          } else {
-            showMessage("GAME OVER...", "danger"); // 💡 alertから変更
-            setTimeout(() => window.location.href = "/home", 2500);
-          }
-        }, 1000);
+        setBattleState(updatedState);
+        if (updatedState.victory) {
+
+          // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+          setCurrentWord("");
+          resetTyping("");
+
+          await showMessage("VICTORY!! 敵を倒した！", "success"); 
+          try {
+            await api.finishBattle({ userId: 1, stageId: 1, isVictory: true, clearTurns: updatedState.turnCount, totalTypedChars: 100, missedChars: 5 });
+          } catch (e) { console.error(e); }
+          window.location.href = "/home";
+        } else {
+          await showMessage("GAME OVER...", "danger");
+          window.location.href = "/home";
+        }
       }
       
     } catch (error: any) {
       console.error("Cast Error:", error);
-      // バックエンドから送られてきたエラー理由を画面に表示
       showMessage(error.message || "魔法の発動に失敗しました", "danger");
     }
   };
@@ -273,7 +304,6 @@ export default function Battle() {
         </div>
       )}
 
-      {/* 💡 【追加】トーストメッセージエリア */}
       {battleMessage && (
         <div className={`battle-message-toast ${battleMessage.type}`}>
           {battleMessage.text}
@@ -300,7 +330,7 @@ export default function Battle() {
             {phase === "ATTACK_TYPING" ? "CASTING TIME" : `DEFENSE TIME - MANA CHARGE x${defenseScore}`} : {(timeLeft / 1000).toFixed(1)}s
           </div>
           <div className="timer-bar-bg">
-            <div className="timer-bar-fill" style={{ width: `${(timeLeft / maxTime) * 100}%`, background: phase === "DEFENSE_TYPING" ? "linear-gradient(90deg, #00c6ff 0%, #0072ff 100%)" : undefined }}></div>
+            <div className="timer-bar-fill" style={{ width: `${(timeLeft / maxTime) * 100}%`, background: phase === "DEFENSE_TYPING" ? "linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%)" : undefined }}></div>
           </div>
         </div>
       )}
@@ -313,23 +343,33 @@ export default function Battle() {
           </h2>
         </div>
         
-        <div className="word-display">
+        <div className="typing-lane">
+          <div className="deadline-line"></div>
+
           {phase === "SELECT" ? (
-            <div>
-              <h1 style={{ color: "#9a8c98", fontSize: "1.8rem", letterSpacing: "5px" }}>SELECT MAGIC...</h1>
+            <div className="static-word">
+              <h1 style={{ fontSize: "1.8rem", letterSpacing: "5px" }}>SELECT MAGIC...</h1>
               <p style={{ color: "#ffeb3b" }}>Selected Cost: {totalSelectedCost}</p>
             </div>
           ) : (
-            <h1>
-              <span style={{ color: phase === "DEFENSE_TYPING" ? "#0072ff" : "#555" }}>{typed}</span>
-              <span style={{ color: "#fff" }}>{untyped}</span>
-            </h1>
+            <div 
+              key={currentWord} 
+              className="flowing-word-container animate-flow"
+              style={{ animationDuration: phase === "DEFENSE_TYPING" ? `${flowSpeed}ms` : `${maxTime}ms`} }
+            >
+              <h1>
+                <span className="typed-text" style={{ color: phase === "DEFENSE_TYPING" ? "#ffeb3b" : "#0072ff" }}>
+                  {typed}
+                </span>
+                <span className="untyped-text">{untyped}</span>
+              </h1>
+            </div>
           )}
-          
-          <p style={{ color: missCount >= 7 && phase === "ATTACK_TYPING" ? "#ff4b2b" : "inherit", fontWeight: "bold" }}>
-            Miss: {missCount} {phase === "ATTACK_TYPING" && `/ ${MAX_MISS_LIMIT}`}
-          </p>
         </div>
+        
+        <p style={{ color: missCount >= 7 && phase === "ATTACK_TYPING" ? "#ff4b2b" : "inherit", fontWeight: "bold", marginTop: "10px" }}>
+          Miss: {missCount} {phase === "ATTACK_TYPING" && `/ ${MAX_MISS_LIMIT}`}
+        </p>
       </div>
 
       <div className="hand-area">
@@ -345,7 +385,7 @@ export default function Battle() {
                 className="card" 
                 style={{
                   position: "relative",
-                  borderColor: isSelected ? "#ffeb3b" : (!canSelect ? "#555" : "#9a8c98"),
+                  borderColor: isSelected ? "#ffeb3b" : (!canSelect ? "#555" : "#ffffff"),
                   transform: isSelected ? "translateY(-10px)" : "none",
                   boxShadow: isSelected ? "0 0 15px rgba(255, 235, 59, 0.5)" : "none",
                   opacity: !canSelect && !isSelected ? 0.4 : 1,
