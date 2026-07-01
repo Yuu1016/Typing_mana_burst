@@ -121,7 +121,7 @@ export default function Battle() {
     resetTyping(firstWord);
     setMaxTime(8000);
     setTimeLeft(8000);
-    setFlowSpeed(3000);
+    setFlowSpeed(2000);
   };
 
   // ミスオーバー（maxTime > 0 を条件に追加し、重複発動を防ぐ）
@@ -132,7 +132,6 @@ export default function Battle() {
   }, [missCount, phase, maxTime]);
 
   
-
   // 時間切れ時
   useEffect(() => {
     if (timeLeft === 0 && maxTime > 0) {
@@ -208,10 +207,10 @@ export default function Battle() {
     //タイピング時間操作
     if (isOvercast) {
       newWord = getRandomWord(selectedDecks[0].skill.cost) + " " + getRandomWord(selectedDecks[0].skill.cost);
-      timeLimit = 5000 + (selectedDecks[0].skill.cost * 1000); 
+      timeLimit = 3000 + (selectedDecks[0].skill.cost * 1000); 
     } else {
       newWord = selectedDecks.map(d => getRandomWord(d.skill.cost)).join(" ");
-      timeLimit = 3000 + (totalSelectedCost * 1500);
+      timeLimit = 3000 + (totalSelectedCost * 500);
     }
 
     setCurrentWord(newWord);
@@ -398,7 +397,7 @@ export default function Battle() {
             <div 
               key={currentWord} 
               className="flowing-word-container animate-flow"
-              style={{ animationDuration: phase === "DEFENSE_TYPING" ? `${flowSpeed}ms` : `${maxTime}ms`} }
+              style={{ animationDuration: phase === "DEFENSE_TYPING" ? `${flowSpeed}ms` : `${maxTime * 0.7}ms`} }
             >
               <h1>
                 <span className="typed-text" style={{ color: phase === "DEFENSE_TYPING" ? "#ffeb3b" : "#0072ff" }}>
