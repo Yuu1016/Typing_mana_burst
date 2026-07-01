@@ -239,3 +239,50 @@
 .untyped-text {
   color: #111; /* まだ打ってない文字は黒 */
 }
+
+/* ================================
+   バトルメッセージ（手札エリア内モーダル）
+   ================================ */
+
+.message-modal-overlay {
+  /* 💡 fixed（全画面）から absolute（親要素の中）に変更！ */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85); /* デッキを隠すための暗い背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  border-radius: 8px; /* 手札エリアの角丸に合わせる */
+}
+
+.message-modal-content {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 20px 40px; /* 手札エリアに合わせて少しシャープに */
+  border: 6px double #ffffff;
+  border-radius: 8px;
+  font-size: 2rem; /* 文字サイズも少し調整 */
+  font-family: 'DotGothic16', monospace;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+  animation: popModal 0.2s ease-out forwards;
+}
+
+@keyframes popModal {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.message-modal-content.danger { 
+  border-color: #ff4b2b; 
+  color: #ff4b2b; 
+}
+
+.message-modal-content.success { 
+  border-color: #4caf50; 
+  color: #4caf50; 
+}

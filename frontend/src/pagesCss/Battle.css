@@ -93,7 +93,11 @@
   background-color: #000000;
   border: 6px double #ffffff; /* 二重線の白枠 */
   border-radius: 8px;
-  padding: 20px;
+  
+  /* 💡 【ここを修正】余白を少し増やし、画面が小さくてもコンテナが潰れないようにする！ */
+  padding: 30px 20px;
+  min-height: 320px; 
+  box-sizing: border-box;
 }
 
 .cards {

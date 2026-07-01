@@ -40,11 +40,14 @@ export function useTyping(targetWord: string){
   }, [handleKeyDown]);
 
   // 手動でリセットするための関数を追加
-  const resetTyping = (newWord: string) => {
+  const resetTyping = (newWord: string, keepMissCount: boolean = false) => {
     setTyped("");
     setUntyped(newWord);
     setIsCompleted(false);
-    setMissCount(0);
+
+    if(!keepMissCount){
+      setMissCount(0);
+    }
   };
 
   //未入力文字の先頭が「空白」なら、自動で入力済みに移動させる

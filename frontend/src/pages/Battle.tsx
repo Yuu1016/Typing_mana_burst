@@ -37,6 +37,7 @@ export default function Battle() {
 
   const MAX_MISS_LIMIT = 10;
 
+  //バトル初期化、読み込み
   useEffect(() => {
     const STAGE_ID = 1;
     api.startBattle(1, STAGE_ID)
@@ -51,7 +52,7 @@ export default function Battle() {
       .catch((err) => console.error("バトル初期化エラー", err));
   }, []);
 
-  // 💡 【超重要】メッセージ表示を「Promise」化し、3秒待てるように進化！
+  // メッセージ表示を必ず3秒待つ
   const showMessage = (text: string, type: MessageType = "info") => {
     return new Promise<void>((resolve) => {
       setBattleMessage({ text, type });
@@ -61,6 +62,7 @@ export default function Battle() {
       }, 3000); 
     });
   };
+
 
   useEffect(() => {
     if (phase === "SELECT" || timeLeft <= 0) return;
@@ -76,6 +78,12 @@ export default function Battle() {
     return () => clearInterval(timerId);
   }, [phase, timeLeft]);
 
+  //アタックターン
+  useEffect(() => {
+    if (phase === "ATTACK_TYPING" && isCompleted) {
+      handleCastSkill();
+    }
+  }, [isCompleted, phase]);
 
   //ディフェンスターン
   useEffect(() => {
@@ -84,16 +92,16 @@ export default function Battle() {
       const defenseWords = ["BLOCK", "GUARD", "SHIELD", "CHARGE", "BARRIER", "REFLECT"];
       const nextWord = defenseWords[Math.floor(Math.random() * defenseWords.length)];
       setCurrentWord(nextWord);
-      resetTyping(nextWord);
+      resetTyping(nextWord, true);
     }
   }, [isCompleted, phase]);
 
-  // 💡 詠唱失敗時も await でメッセージ終了を待つ！
+  // 詠唱失敗時も await でメッセージ終了を待つ！
   const handleChantFailure = async (message: string) => {
     setTimeLeft(0);
     setMaxTime(0);
     
-    // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+    // メッセージを待つ前に、タイピング文字を即座に消す！
     setCurrentWord("");
     resetTyping("");
 
@@ -122,6 +130,8 @@ export default function Battle() {
       handleChantFailure("詠唱崩壊... 敵のターンへ移行します！");
     }
   }, [missCount, phase, maxTime]);
+
+  
 
   // 時間切れ時
   useEffect(() => {
@@ -185,7 +195,8 @@ export default function Battle() {
 
 
   const totalSelectedCost = selectedDecks.reduce((sum, d) => sum + d.skill.cost, 0);
-  const justBonus = battleState && (totalSelectedCost === battleState.currentLimitCost && totalSelectedCost > 0);
+  const justBonus = battleState && (totalSelectedCost === battleState.currentLimitCost &&
+                                     totalSelectedCost > 0 );
 
   const handleStartChanting = () => {
     if (selectedDecks.length === 0) return;
@@ -210,6 +221,8 @@ export default function Battle() {
     setPhase("ATTACK_TYPING");
   };
 
+
+  //魔法使用時の処理
   const handleCastSkill = async () => {
     if (!isCompleted || selectedDecks.length === 0 || phase !== "ATTACK_TYPING") return;
 
@@ -230,13 +243,13 @@ export default function Battle() {
         currentState: battleState 
       };
       
-      // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+      // メッセージを待つ前に、タイピング文字を即座に消す！
       setCurrentWord("");
       resetTyping("");
 
       const updatedState = await api.executeAttack(requestData);
 
-      // 💡 JUSTボーナスも await で待つ！
+      // JUSTボーナスも await で待つ！
       if (justBonus && updatedState.enemyCurrentHp < battleState.enemyCurrentHp) {
         await showMessage("JUST BONUS!! ダメージ1.5倍！", "success"); 
       }
@@ -268,7 +281,7 @@ export default function Battle() {
         setBattleState(updatedState);
         if (updatedState.victory) {
 
-          // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+          //メッセージを待つ前に、タイピング文字を即座に消す！
           setCurrentWord("");
           resetTyping("");
 
@@ -289,6 +302,40 @@ export default function Battle() {
     }
   };
 
+  //マナチャージ（回復専念）の処理
+  const handleManaCharge = async () => {
+    // 選択していた魔法カードがあればキャンセルする
+    setSelectedDecks([]);
+    
+    // 現在のタイピング状態をクリア
+    setTimeLeft(0);
+    setMaxTime(0);
+    setCurrentWord("");
+    resetTyping("");
+
+    // メッセージを表示して少し待機
+    await showMessage("MANA CHARGE!! 精神を集中する...", "info"); 
+
+    // 攻撃していないので、コストは減らさずそのままの状態を引き継ぐ
+    const simulatedPendingState = {
+      ...battleState
+    };
+
+    setPendingState(simulatedPendingState);
+    setPhase("DEFENSE_TYPING");
+    setDefenseScore(0);
+    
+    // 最初の単語をセット
+    const firstWord = "MANA CHARGE";
+    setCurrentWord(firstWord);
+    resetTyping(firstWord, true);
+    
+    // マナチャージボーナスとして、防衛時間を長め（例: 8秒）にする！
+    setMaxTime(10000);
+    setTimeLeft(10000);
+    setFlowSpeed(3000); // 難易度に合わせてスピードを調整
+  };
+
   if (isLoading) return <div className="battle-container">Loading Battle...</div>;
   if (!battleState) return <div className="battle-container">バトルの初期化に失敗しました。</div>;
 
@@ -304,12 +351,7 @@ export default function Battle() {
         </div>
       )}
 
-      {battleMessage && (
-        <div className={`battle-message-toast ${battleMessage.type}`}>
-          {battleMessage.text}
-        </div>
-      )}
-
+      {/* ===== 上部：ビジュアルエリア ===== */}
       <div className="visual-area">
         <div className={`character player ${playerTakingDamage ? "shake-effect damage-flash" : ""}`}>
           <h3>Player</h3>
@@ -324,6 +366,7 @@ export default function Battle() {
         </div>
       </div>
 
+      {/* ===== 中央：タイピングエリア ===== */}
       {phase !== "SELECT" && maxTime > 0 && (
         <div className="timer-container">
           <div className="timer-text">
@@ -349,7 +392,7 @@ export default function Battle() {
           {phase === "SELECT" ? (
             <div className="static-word">
               <h1 style={{ fontSize: "1.8rem", letterSpacing: "5px" }}>SELECT MAGIC...</h1>
-              <p style={{ color: "#ffeb3b" }}>Selected Cost: {totalSelectedCost}</p>
+              <p style={{ color: "#000000" }}>Selected Cost: {totalSelectedCost}</p>
             </div>
           ) : (
             <div 
@@ -372,8 +415,37 @@ export default function Battle() {
         </p>
       </div>
 
-      <div className="hand-area">
+      {/* ===== 下部：手札エリア ===== */}
+      <div className="hand-area" style={{ position: "relative", overflow: "hidden" }}>
+
+        {/*メッセージがある時だけ、モーダル表示*/}
+        {battleMessage && (
+          <div className="message-modal-overlay">
+            <div className={`message-modal-content ${battleMessage.type}`}>
+              {battleMessage.text}
+            </div>
+          </div>
+        )}
+
+        {/* 魔法カードの表示 */}
         <div className="cards">
+          <div 
+            className="card" 
+            style={{
+              borderColor: "#00ffff", // 回復をイメージした水色の枠
+              backgroundColor: "#001122", // ほんのり青みがかった黒背景
+              cursor: phase === "SELECT" ? "pointer" : "not-allowed"
+            }}
+            onClick={() => {
+              if (phase === "SELECT") {
+                handleManaCharge();
+              }
+            }}
+          >
+            <div className="card-name" style={{ fontSize: "1rem", textAlign: "center", color: "#00ffff" }}>MANA CHARGE</div>
+            <div className="card-cost" style={{ marginTop: "10px", color: "#00ffff" }}>Action</div>
+          </div>
+
           {userDecks.map((deck) => {
             const selectIndex = selectedDecks.findIndex(d => d.id === deck.id);
             const isSelected = selectIndex !== -1;
