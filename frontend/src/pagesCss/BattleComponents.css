@@ -37,6 +37,38 @@
   transition: transform 0.1s;
 }
 
+/* 選択されたカード */
+.card.selected {
+  border-color: #ffeb3b;
+  transform: translateY(-10px);
+  box-shadow: 0 0 15px rgba(255, 235, 59, 0.5);
+  opacity: 1;
+}
+
+/* 選択できない（コスト不足の）カード */
+.card.disabled {
+  border-color: #555;
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 選択可能だが、まだ選択されていないカード */
+.card.selectable {
+  border-color: #ffffff;
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* マナチャージ専用カード */
+.card.mana-charge {
+  border-color: #00ffff;
+  background-color: #001122;
+  cursor: pointer;
+}
+.card.mana-charge.disabled {
+  cursor: not-allowed;
+}
+
 .card:hover {
   transform: translateY(-10px);
   border-color: #ffeb3b;

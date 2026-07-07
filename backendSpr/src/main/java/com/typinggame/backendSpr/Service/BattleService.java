@@ -51,6 +51,8 @@ public class BattleService {
         state.setUserId(userId);
         state.setStageId(stageId);
         state.setEnemyName(stage.getEnemyName());
+        state.setEnemyImagePath(stage.getImagePath());
+        state.setEnemyDamageImagePath(stage.getDamageImagePath());
         
         state.setPlayerMaxHp(user.getCurrentHp());
         state.setPlayerCurrentHp(user.getCurrentHp()); // スタート時は満タン

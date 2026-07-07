@@ -358,8 +358,19 @@ export default function Battle() {
           <p>HP: {battleState.playerCurrentHp} / {battleState.playerMaxHp}</p>
         </div>
 
+        {/*エネミー側の表示 */}
         <div className={`character enemy ${enemyTakingDamage ? "shake-effect damage-flash" : ""}`}>
           <h3>{battleState.enemyName}</h3>
+          
+          {/*DBから送られてきた画像パスを使ってスライムを表示 */}
+          <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img 
+              src={enemyTakingDamage ? battleState.enemyDamageImagePath : battleState.enemyImagePath} 
+              alt={battleState.enemyName} 
+              style={{ width: '120px', imageRendering: 'pixelated' }} 
+            />
+          </div>
+
           <div className="hp-bar-bg"><div className="hp-bar-fill enemy-hp" style={{ width: `${(battleState.enemyCurrentHp / battleState.enemyMaxHp) * 100}%` }}></div></div>
           <p>HP: {battleState.enemyCurrentHp} / {battleState.enemyMaxHp}</p>
         </div>
@@ -427,41 +438,32 @@ export default function Battle() {
 
         {/* 魔法カードの表示 */}
         <div className="cards">
+          {/* マナチャージカード */}
           <div 
-            className="card" 
-            style={{
-              borderColor: "#00ffff", // 回復をイメージした水色の枠
-              backgroundColor: "#001122", // ほんのり青みがかった黒背景
-              cursor: phase === "SELECT" ? "pointer" : "not-allowed"
-            }}
+            className={`card mana-charge ${phase !== "SELECT" ? "disabled" : ""}`}
             onClick={() => {
-              if (phase === "SELECT") {
-                handleManaCharge();
-              }
+              if (phase === "SELECT") handleManaCharge();
             }}
           >
             <div className="card-name" style={{ fontSize: "1rem", textAlign: "center", color: "#00ffff" }}>MANA CHARGE</div>
             <div className="card-cost" style={{ marginTop: "10px", color: "#00ffff" }}>Action</div>
           </div>
 
+          {/* 魔法カード群 */}
           {userDecks.map((deck) => {
             const selectIndex = selectedDecks.findIndex(d => d.id === deck.id);
             const isSelected = selectIndex !== -1;
             const canSelect = isSelected || selectedDecks.length === 0 || (totalSelectedCost + deck.skill.cost <= battleState.remainingCost);
 
+            // 💡 状態に応じてクラス名を決定する
+            let cardClass = "card selectable";
+            if (isSelected) cardClass = "card selected";
+            else if (!canSelect) cardClass = "card disabled";
+
             return (
               <div 
                 key={deck.id} 
-                className="card" 
-                style={{
-                  position: "relative",
-                  borderColor: isSelected ? "#ffeb3b" : (!canSelect ? "#555" : "#ffffff"),
-                  transform: isSelected ? "translateY(-10px)" : "none",
-                  boxShadow: isSelected ? "0 0 15px rgba(255, 235, 59, 0.5)" : "none",
-                  opacity: !canSelect && !isSelected ? 0.4 : 1,
-                  cursor: phase === "SELECT" && canSelect ? "pointer" : "not-allowed",
-                  transition: "all 0.2s"
-                }}
+                className={cardClass}
                 onClick={() => {
                   if (phase === "SELECT" && canSelect) {
                     if (isSelected) {

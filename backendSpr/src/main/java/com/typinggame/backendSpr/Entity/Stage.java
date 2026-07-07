@@ -87,6 +87,16 @@ public class Stage {
     @NotBlank
     private String limitCostPool;
 
+    /**
+     * 敵モンスターのimageパス
+     * NOT NULL
+     */
+    @Column(name = "image_path", nullable = false)
+    private String imagePath;
+
+    @Column(name = "damage_image_path", nullable = false)
+    private String damageImagePath;
+
     // -------------------------------------------------------
     //  リレーションシップ
     // -------------------------------------------------------

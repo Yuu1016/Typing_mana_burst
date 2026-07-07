@@ -23,4 +23,6 @@ public class BattleStateDto {
     private int turnCount;        // 現在のターン数
     private boolean battleFinished;   // バトルが終了したかどうか
     private boolean victory;    // 勝利したかどうか
+    private String enemyImagePath;
+    private String enemyDamageImagePath;
 }
