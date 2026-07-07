@@ -38,7 +38,9 @@ CREATE TABLE m_stages (
     enemy_name       VARCHAR(100) NOT NULL,
     enemy_hp         INT          NOT NULL,
     enemy_attack     INT          NOT NULL,
-    limit_cost_pool  VARCHAR(10)  NOT NULL
+    limit_cost_pool  VARCHAR(10)  NOT NULL,
+    image_path       VARCHAR(255) NOT NULL,
+    damage_image_path VARCHAR(255) NOT NULL
 );
 
 -- ③ ユーザーテーブル
@@ -174,21 +176,21 @@ VALUES
 --  stage9〜13: 終盤  limit_cost_pool='4-5'
 -- -------------------------------------------------------
 INSERT INTO m_stages
-    (stage_number, stage_name, enemy_name, enemy_hp, enemy_attack, limit_cost_pool)
+    (stage_number, stage_name, enemy_name, enemy_hp, enemy_attack, limit_cost_pool, image_path, damage_image_path)
 VALUES
-(1,  '緑の草原',          'スライム',          80,   8,  '3-4'),
-(2,  '枯れ木の森',        'ゴブリン',         130,  14,  '3-4'),
-(3,  '砂漠の迷路',        'サンドワーム',      200,  20,  '3-4'),
-(4,  '溶岩の洞窟',        'ファイアリザード',  290,  28,  '3-4'),
-(5,  '嵐の山脈',          'ストーンゴーレム',  400,  38,  '3-5'),
-(6,  '呪われた沼地',      'ヴェノムトード',    520,  48,  '3-5'),
-(7,  '氷の神殿',          'フロストナイト',    660,  58,  '3-5'),
-(8,  '砂漠の王宮',        'ファラオの亡霊',    820,  70,  '3-5'),
-(9,  '天空の要塞',        'グリフォン',        980,  84,  '4-5'),
-(10, '暗黒の遺跡',        'シャドウデーモン', 1200, 100,  '4-5'),
-(11, '深淵の城',          'ドラゴン',         1500, 120,  '4-5'),
-(12, '魔王城の大広間',    '魔王の右腕・ゼロス',1900, 145,  '4-5'),
-(13, '魔王城・玉座の間',  '魔王ダークロード',  2500, 180,  '4-5');
+(1,  '緑の草原',          'スライム',          80,   8,  '3-4', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(2,  '枯れ木の森',        'ゴブリン',         130,  14,  '3-4', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(3,  '砂漠の迷路',        'サンドワーム',      200,  20,  '3-4', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(4,  '溶岩の洞窟',        'ファイアリザード',  290,  28,  '3-4', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(5,  '嵐の山脈',          'ストーンゴーレム',  400,  38,  '3-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(6,  '呪われた沼地',      'ヴェノムトード',    520,  48,  '3-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(7,  '氷の神殿',          'フロストナイト',    660,  58,  '3-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(8,  '砂漠の王宮',        'ファラオの亡霊',    820,  70,  '3-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(9,  '天空の要塞',        'グリフォン',        980,  84,  '4-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(10, '暗黒の遺跡',        'シャドウデーモン', 1200, 100,  '4-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(11, '深淵の城',          'ドラゴン',         1500, 120,  '4-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(12, '魔王城の大広間',    '魔王の右腕・ゼロス',1900, 145,  '4-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png'),
+(13, '魔王城・玉座の間',  '魔王ダークロード',  2500, 180,  '4-5', '/images/monsters/slime1.png', '/images/monsters/slime2.png');
 
 
 -- =============================================================
