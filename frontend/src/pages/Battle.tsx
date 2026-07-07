@@ -386,7 +386,6 @@ export default function Battle() {
         </div>
         
         <div className="typing-lane">
-          <div className="deadline-line"></div>
 
           {phase === "SELECT" ? (
             <div className="static-word">
