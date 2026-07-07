@@ -24,7 +24,7 @@ public class UserService {
 	
 	/**
      * 指定されたIDのユーザー情報を取得する
-     * （※Entityで @OneToMany を設定しているため、紐づくデッキ情報も自動で取得できます）
+     * （Entityで @OneToMany を設定しているため、紐づくデッキ情報も自動で取得できる）
      * * @param userId 取得したいユーザーのID
      * @return ユーザー情報
      */

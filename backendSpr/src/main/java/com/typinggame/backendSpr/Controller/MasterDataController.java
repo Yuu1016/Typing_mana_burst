@@ -21,14 +21,13 @@ public class MasterDataController {
 	private final MasterDataService masterDataService;
 	
 	/**
-     * ゲーム起動時（またはタイトル画面〜ホーム画面遷移時）に呼び出されるAPI。
-     * スキルやステージの全一覧をReactに渡します。
+     * ゲーム起動時（またはタイトル画面〜ホーム画面遷移時）に呼び出されるAPI
+     * スキルやステージの全一覧をフロントに渡す
      * エンドポイント: GET /api/v1/master-data
-     * @return マスタデータのまとまり（JSON形式で自動変換されます）
+     * @return マスタデータのまとまり（JSON形式に自動変換）
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllMasterData() {
-        // Serviceを呼んでデータをもらい、ステータスコード200 (OK) と返す
         Map<String, Object> data = masterDataService.getAllMasterData();
         return ResponseEntity.ok(data);
     }

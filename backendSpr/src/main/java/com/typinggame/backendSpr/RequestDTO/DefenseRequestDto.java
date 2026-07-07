@@ -8,6 +8,5 @@ import lombok.Data;
 public class DefenseRequestDto {
 	
 	private int defenseScore;
-	
 	private BattleStateDto currentState;
 }
