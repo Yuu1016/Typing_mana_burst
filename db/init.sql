@@ -49,7 +49,11 @@ CREATE TABLE t_users (
     username          VARCHAR(50)  NOT NULL UNIQUE,
     current_hp        INT          NOT NULL DEFAULT 100,
     gold              INT          NOT NULL DEFAULT 0,
-    cleared_stage_id  INT          NOT NULL DEFAULT 0
+    cleared_stage_id  INT          NOT NULL DEFAULT 0,
+    upgrade_hp_level      INT          NOT NULL DEFAULT 0,
+    upgrade_defense_level INT          NOT NULL DEFAULT 0,
+    upgrade_time_level    INT          NOT NULL DEFAULT 0,
+    upgrade_mana_level    INT          NOT NULL DEFAULT 0
 );
 
 -- ④ ユーザーデッキテーブル
@@ -202,9 +206,9 @@ VALUES
 -- -------------------------------------------------------
 INSERT INTO t_users (username, current_hp, gold, cleared_stage_id)
 VALUES
-('typing_hero', 100,   100,  0),   -- id=1 初心者
-('mana_master', 150,  2500,  5),   -- id=2 中級者
-('burst_god',   300, 99999, 10);   -- id=3 最強デバッグ用
+('typing_hero', 100,   100,  0, 0, 0, 0, 0,),   -- id=1 初心者
+('mana_master', 150,  2500,  5, 5, 2, 3, 1),   -- id=2 中級者
+('burst_god',   300, 99999, 10, 20, 10, 10, 10);   -- id=3 最強デバッグ用
 
 
 -- -------------------------------------------------------
