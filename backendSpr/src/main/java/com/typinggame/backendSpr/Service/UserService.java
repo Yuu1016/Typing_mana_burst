@@ -35,24 +35,54 @@ public class UserService {
     }
     
     
-    //強化（最大HPアップ）
+    /**
+     * 統合された強化メソッド
+     * @param userId ユーザーID
+     * @param upgradeType 強化の種類 ("HP", "DEFENSE", "TIME", "MANA")
+     * @return 更新されたユーザー情報
+     */
     @Transactional
-    public User upGradeMaxHp(Long userId) {
-    	
-    	User user = getUserProfile(userId);
-    	
-    	int upgradeCost = 50; 
-        int hpIncreaseAmount = 10;
+    public User upgradeStatus(Long userId, String upgradeType) {
+        User user = getUserProfile(userId);
         
-        if (user.getGold() < upgradeCost) {
-            throw new IllegalStateException("ゴールドが足りません！ 所持: " + user.getGold() + "G, 必要: " + upgradeCost + "G");
+        // 強化に必要な基本コスト（例: レベル × 50G + 初期50G）
+        int upgradeCost = 0;
+
+        switch (upgradeType.toUpperCase()) {
+            case "HP":
+                upgradeCost = 50 + (user.getUpgradeHpLevel() * 50);
+                if (user.getGold() < upgradeCost) throw new IllegalStateException("ゴールドが足りません！");
+                user.setGold(user.getGold() - upgradeCost);
+                user.setUpgradeHpLevel(user.getUpgradeHpLevel() + 1);
+                user.setCurrentHp(user.getCurrentHp() + 10); // HPはレベルアップで+10
+                break;
+
+            case "DEFENSE":
+                upgradeCost = 100 + (user.getUpgradeDefenseLevel() * 80);
+                if (user.getGold() < upgradeCost) throw new IllegalStateException("ゴールドが足りません！");
+                user.setGold(user.getGold() - upgradeCost);
+                user.setUpgradeDefenseLevel(user.getUpgradeDefenseLevel() + 1);
+                break;
+
+            case "TIME":
+                upgradeCost = 150 + (user.getUpgradeTimeLevel() * 100);
+                if (user.getGold() < upgradeCost) throw new IllegalStateException("ゴールドが足りません！");
+                user.setGold(user.getGold() - upgradeCost);
+                user.setUpgradeTimeLevel(user.getUpgradeTimeLevel() + 1);
+                break;
+
+            case "MANA":
+                upgradeCost = 200 + (user.getUpgradeManaLevel() * 150);
+                if (user.getGold() < upgradeCost) throw new IllegalStateException("ゴールドが足りません！");
+                user.setGold(user.getGold() - upgradeCost);
+                user.setUpgradeManaLevel(user.getUpgradeManaLevel() + 1);
+                break;
+
+            default:
+                throw new IllegalArgumentException("不明な強化タイプです: " + upgradeType);
         }
-        
-        user.setGold(user.getGold() - upgradeCost);
-        user.setCurrentHp(user.getCurrentHp() + hpIncreaseAmount);
-        
+
         return userRepository.save(user);
-    	
     }
     
     

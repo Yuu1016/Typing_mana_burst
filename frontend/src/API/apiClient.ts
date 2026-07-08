@@ -87,5 +87,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify(requestBody),
     }),
+
+    //工房でのステータス強化
+  upgradeStatus: async (userId: number, type: "HP" | "DEFENSE" | "TIME" | "MANA") => {
+    const response = await fetch(`${BASE_URL}/users/${userId}/upgrade/${type}`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Upgrade failed");
+    return response.json();
+  },
 }
 

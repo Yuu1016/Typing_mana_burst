@@ -70,6 +70,18 @@ public class User {
     @PositiveOrZero
     private Integer clearedStageId = 0;
 
+    @Column(name = "upgrade_hp_level", nullable = false)
+    private int upgradeHpLevel = 0;
+
+    @Column(name = "upgrade_defense_level", nullable = false)
+    private int upgradeDefenseLevel = 0;
+
+    @Column(name = "upgrade_time_level", nullable = false)
+    private int upgradeTimeLevel = 0;
+
+    @Column(name = "upgrade_mana_level", nullable = false)
+    private int upgradeManaLevel = 0;
+
     // -------------------------------------------------------
     //  リレーションシップ
     // -------------------------------------------------------
@@ -89,4 +101,46 @@ public class User {
      */
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BattleLog> battleLogs;
+
+
+    // ==========================================
+    // 計算ゲッター（Lombokと共存OK）
+    // ※これらは自動的にJSONに変換され、React側でそのまま使える
+    // ==========================================
+
+    /**
+     * 現在の最大HPを計算して返す
+     * 基本100 + (HPレベル × 10)
+     */
+    public int getCalculatedMaxHp() {
+        return 100 + (this.upgradeHpLevel * 10);
+    }
+
+    /**
+     * 防衛時のダメージカット量（スコア1あたりの軽減量）
+     * 基本3 + (防衛レベル × 1)
+     */
+    public int getDefenseCutRate() {
+        return 3 + (this.upgradeDefenseLevel * 1);
+    }
+
+    /**
+     * タイピングの制限時間のボーナス（ミリ秒）
+     * タイムレベル × 500ms（0.5秒）延長
+     */
+    public int getTimeBonusMs() {
+        return this.upgradeTimeLevel * 500;
+    }
+
+    /**
+     * ターン開始時の追加マナ回復量
+     * マナレベル1につき +1 回復
+     */
+    public int getManaRecoveryBonus() {
+        return this.upgradeManaLevel * 1;
+    }
+
 }
+
+
+

@@ -35,13 +35,15 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
     
-    /**
-     * 【工房画面】ゴールドを消費して最大HPを強化するAPI
-     * エンドポイント: POST /api/v1/users/{userId}/upgrade-hp
+   /**
+     * 【工房画面】ゴールドを消費してステータスを強化するAPI
+     * エンドポイント: POST /api/v1/users/{userId}/upgrade/{type}
+     * type例: "HP", "DEFENSE", "TIME", "MANA"
      */
-    @PostMapping("/{userId}/upgrade-hp")
-    public ResponseEntity<User> upGradeMaxHp(@Valid @PathVariable Long userId) {
-        User updatedUser = userService.upGradeMaxHp(userId);
+    @PostMapping("/{userId}/upgrade/{type}")
+    public ResponseEntity<User> upgradeStatus(@Valid @PathVariable Long userId, @PathVariable String type) {
+        
+        User updatedUser = userService.upgradeStatus(userId, type);
         return ResponseEntity.ok(updatedUser);
     }
     
