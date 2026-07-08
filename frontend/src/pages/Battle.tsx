@@ -1,6 +1,6 @@
 // src/pages/Battle.tsx
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api } from "../API/apiClient";
 import { useTyping } from "../hooks/useTyping";
 import { getRandomWord } from "../utils/wordDictionary";
@@ -12,6 +12,7 @@ type BattlePhase = "SELECT" | "ATTACK_TYPING" | "DEFENSE_TYPING";
 type MessageType = "info" | "success" | "danger";
 
 export default function Battle() {
+  const { stageId } = useParams<{ stageId: string }>();
   const [battleState, setBattleState] = useState<any>(null);
   const [userDecks, setUserDecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,8 +40,9 @@ export default function Battle() {
 
   //バトル初期化、読み込み
   useEffect(() => {
-    const STAGE_ID = 1;
-    api.startBattle(1, STAGE_ID)
+    const currentStageId = Number(stageId) || 1;
+    
+    api.startBattle(1, currentStageId)
       .then((data) => {
         setBattleState(data);
         return api.getUserProfile(1);
@@ -50,7 +52,7 @@ export default function Battle() {
         setIsLoading(false);
       })
       .catch((err) => console.error("バトル初期化エラー", err));
-  }, []);
+  }, [stageId]);
 
   // メッセージ表示を必ず3秒待つ
   const showMessage = (text: string, type: MessageType = "info") => {

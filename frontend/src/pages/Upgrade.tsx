@@ -11,7 +11,7 @@ export default function Upgrade() {
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
-    // ユーザー情報の取得（仮でID:1としています）
+    // ユーザー情報の取得（仮でID:1）
     api.getUserProfile(1)
       .then((data) => {
         setUser(data);
@@ -35,7 +35,7 @@ export default function Upgrade() {
     }
 
     try {
-      // 💡 先ほど作ったバックエンドのAPIを呼び出す！
+      // API呼び出しで強化を実行
       const updatedUser = await api.upgradeStatus(user.id, type);
       setUser(updatedUser);
       showMessage(`${type} を強化しました！`, "success");

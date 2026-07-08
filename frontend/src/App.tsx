@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Deck from "./pages/Deck";
 import Battle from "./pages/Battle";
 import Upgrade from "./pages/Upgrade";
+import StageSelect from './pages/StageSelect';
 
 function App() {
   return (
@@ -13,8 +14,10 @@ function App() {
         <Route path="/" element={<Title />} />
         <Route path="/home" element={<Home />} />
         <Route path="/deck" element={<Deck />} />
-        <Route path="/battle" element={<Battle />} />
+        <Route path="/battle/:stageId" element={<Battle />} />
         <Route path="/upgrade" element={<Upgrade />} />
+        <Route path="/stage-select" element={<StageSelect />} />
+
       </Routes>
     </BrowserRouter>
   );

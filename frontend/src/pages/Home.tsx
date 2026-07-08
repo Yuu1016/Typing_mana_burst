@@ -50,7 +50,7 @@ export default function Home() {
       
       {/* メニューボタン */}
       <div className="menu-buttons">
-        <Link to="/battle" className="menu-button button-battle">ダンジョンに挑む</Link>
+        <Link to="/stage-select" className="menu-button button-battle">ダンジョンに挑む</Link>
         <Link to="/deck" className="menu-button">魔法書を開く (編成)</Link>
         <Link to="/upgrade" className="menu-button">魔力を強化する (工房)</Link>
       </div>

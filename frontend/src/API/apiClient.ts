@@ -96,5 +96,12 @@ export const api = {
     if (!response.ok) throw new Error("Upgrade failed");
     return response.json();
   },
+
+  // 💡 【追加】ゲーム起動時などに全ステージ・全スキル一覧を取得する
+  getAllMasterData: async () => {
+    const response = await fetch(`${BASE_URL}/master-data`);
+    if (!response.ok) throw new Error("Master data fetch failed");
+    return response.json();
+  },
 }
 
