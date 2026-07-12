@@ -4,6 +4,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { api } from "../API/apiClient";
 import { useTyping } from "../hooks/useTyping";
 import { getRandomWord } from "../utils/wordDictionary";
+import { playSE } from "../utils/soundManager";
 import "../pagesCss/Battle.css";
 import "../pagesCss/BattleEffects.css"; 
 import "../pagesCss/BattleComponents.css";
@@ -167,6 +168,7 @@ export default function Battle() {
                     resetTyping("");
                     setPlayerTakingDamage(true);
                     await showMessage(`敵の攻撃！ ${damageTaken} のダメージ！`, "danger");
+                    playSE("/sounds/maou_se_battle18", 0.3);
                     setPlayerTakingDamage(false);
               } else if (defenseScore > 0 && damageTaken === 0) {
                     setCurrentWord("");
@@ -251,10 +253,12 @@ export default function Battle() {
       resetTyping("");
 
       const updatedState = await api.executeAttack(requestData);
+      playSE("/sounds/maou_se_8bit12", 0.3);
 
       // JUSTボーナス
       if (justBonus && updatedState.enemyCurrentHp < battleState.enemyCurrentHp) {
-        await showMessage("JUST BONUS!! ダメージ1.5倍！", "success"); 
+        await showMessage("JUST BONUS!! ダメージ1.5倍！", "success");
+
       }
 
       setBattleState({
@@ -460,6 +464,7 @@ export default function Battle() {
             className={`card mana-charge ${phase !== "SELECT" ? "disabled" : ""}`}
             onClick={() => {
               if (phase === "SELECT") handleManaCharge();
+              if (justBonus && phase === "SELECT") playSE("/sounds/maou_se_8bit16.mp3", 0.3);
             }}
           >
             <div className="card-name" style={{ fontSize: "1rem", textAlign: "center", color: "#00ffff" }}>MANA CHARGE</div>

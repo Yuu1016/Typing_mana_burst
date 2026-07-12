@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../API/apiClient";
+import { playSE } from "../utils/soundManager";
 
 export default function Title() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -32,7 +33,9 @@ export default function Title() {
       {/* マスタデータが読み込まれるまではボタンを押せないようにする */}
       {isLoaded ? (
         <Link to="/home">
-          <button style={{ padding: "10px 30px", fontSize: "1.2rem" }}>START</button>
+          <button style={{ padding: "10px 30px", fontSize: "1.2rem" }} onClick={() => playSE("/sounds/maou_se_8bit03.mp3", 0.3)}>
+            START
+          </button>
         </Link>
       ) : (
         <p>Loading Game Data...</p>

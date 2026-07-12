@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { playSE } from "../utils/soundManager";
 
 export function useTyping(targetWord: string){
     const[typed, setTyped] = useState("");
@@ -23,15 +24,18 @@ export function useTyping(targetWord: string){
                 setUntyped((prev) => prev.slice(1));
 
                 if (untyped.length === 1) {
-                setIsCompleted(true);
+                    playSE("/sounds/maou_se_system46.mp3", 0.3);
+                    setIsCompleted(true);
                 } 
             } else {
+                    playSE("/sounds/maou_se_system25.mp3", 0.3);
                     setMissCount((prev) => prev + 1);
                 }
         },
         [untyped, isCompleted]
     );
 
+  
    useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
