@@ -31,7 +31,7 @@ export default function StageSelect() {
   if (isLoading) return <div style={{ color: "white", padding: "20px" }}>Loading Stages...</div>;
   if (!user || stages.length === 0) return <div style={{ color: "white", padding: "20px" }}>データの読み込みに失敗しました。</div>;
 
-  // プレイヤーが次に進むべき最新のステージ番号
+  // プレイヤーが次に進む最新のステージ番号
   const nextStageNumber = user.clearedStageId + 1;
 
   return (
@@ -82,10 +82,10 @@ export default function StageSelect() {
                 cursor: isLocked ? "not-allowed" : "pointer",
                 transition: "transform 0.1s"
               }}
-              // 💡 クリックした時の処理（ロックされていなければ、そのステージのバトルへ飛ぶ！）
+              // クリックした時の処理（ロックされていなければ、そのステージのバトルへ飛ぶ)
               onClick={() => {
                 if (!isLocked) {
-                  // まだBattle.tsx側が未対応ですが、とりあえず /battle/3 のようなURLに飛ばす準備をします
+                  // まだBattle.tsx側が未対応ですが、とりあえず /battle/3 のようなURLに飛ばす準備
                   navigate(`/battle/${stage.id}`);
                 }
               }}

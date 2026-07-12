@@ -288,9 +288,14 @@ export default function Battle() {
 
           await showMessage("VICTORY!! 敵を倒した！", "success"); 
           try {
-            await api.finishBattle({ userId: 1, stageId: 1, isVictory: true, clearTurns: updatedState.turnCount, totalTypedChars: 100, missedChars: 5 });
+            await api.finishBattle({ userId: 1, 
+                                     stageId: battleState.stageId, 
+                                     isVictory: true,  //後々、勝敗判定をサーバー側で行うように変更する予定
+                                     clearTurns: updatedState.turnCount, 
+                                     totalTypedChars: 100, 
+                                     missedChars: 5 });
           } catch (e) { console.error(e); }
-          window.location.href = "/home";
+          window.location.href = "/home"; //後々リザルト画面への遷移に変更
         } else {
           await showMessage("GAME OVER...", "danger");
           window.location.href = "/home";
