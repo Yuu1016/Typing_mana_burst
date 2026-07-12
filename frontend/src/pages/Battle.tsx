@@ -1,6 +1,6 @@
 // src/pages/Battle.tsx
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { api } from "../API/apiClient";
 import { useTyping } from "../hooks/useTyping";
 import { getRandomWord } from "../utils/wordDictionary";
@@ -13,6 +13,7 @@ type MessageType = "info" | "success" | "danger";
 
 export default function Battle() {
   const { stageId } = useParams<{ stageId: string }>();
+  const navigate = useNavigate();
   const [battleState, setBattleState] = useState<any>(null);
   const [userDecks, setUserDecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,16 +99,16 @@ export default function Battle() {
     }
   }, [isCompleted, phase]);
 
-  // 詠唱失敗時も await でメッセージ終了を待つ！
+  // 詠唱失敗時も await でメッセージ終了を待つ
   const handleChantFailure = async (message: string) => {
     setTimeLeft(0);
     setMaxTime(0);
     
-    // メッセージを待つ前に、タイピング文字を即座に消す！
+    // メッセージを待つ前に、タイピング文字を即座に消す
     setCurrentWord("");
     resetTyping("");
 
-    // ここで3秒間処理が一時停止します
+    // メッセージを表示して待機
     await showMessage(message, "danger"); 
     
     const simulatedPendingState = {
@@ -134,12 +135,14 @@ export default function Battle() {
   }, [missCount, phase, maxTime]);
 
   
-  // 時間切れ時
+ 
   useEffect(() => {
+     
     if (timeLeft === 0 && maxTime > 0) {
       if (phase === "ATTACK_TYPING") {
         handleChantFailure("TIME UP... 詠唱失敗！");
       } 
+      
       else if (phase === "DEFENSE_TYPING") {
         setMaxTime(0);
 
@@ -154,36 +157,36 @@ export default function Battle() {
               const finalState = await api.executeDefense(requestData);
               const damageTaken = pendingState.playerCurrentHp - finalState.playerCurrentHp;
               
-              // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
+              // タイピング文字を消す
               setCurrentWord("");
               resetTyping("");
 
-              // 💡 防衛時のメッセージも await で待つ！
+              //敵のダメージを受けるタイミングのメッセージ表示
               if (damageTaken > 0) {
-                // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
-                setCurrentWord("");
-                resetTyping("");
-                setPlayerTakingDamage(true);
-                await showMessage(`敵の攻撃！ ${damageTaken} のダメージ！`, "danger");
-                setPlayerTakingDamage(false);
+                    setCurrentWord("");
+                    resetTyping("");
+                    setPlayerTakingDamage(true);
+                    await showMessage(`敵の攻撃！ ${damageTaken} のダメージ！`, "danger");
+                    setPlayerTakingDamage(false);
               } else if (defenseScore > 0 && damageTaken === 0) {
-                // 💡 【追加】メッセージを待つ前に、タイピング文字を即座に消す！
-                setCurrentWord("");
-                resetTyping("");
-                await showMessage("PERFECT GUARD!! 攻撃を完全に防いだ！", "success");
+                    setCurrentWord("");
+                    resetTyping("");
+                    await showMessage("PERFECT GUARD!! 攻撃を完全に防いだ！", "success");
               }
 
-              setPhase("SELECT"); // メッセージが消えてからSELECTに戻す
-              setBattleState(finalState);
-              setPendingState(null);
-              setSelectedDecks([]);
-              setCurrentWord("");
-              resetTyping("");
+                setPhase("SELECT"); // メッセージが消えてからSELECTに戻す
+                setBattleState(finalState);
+                setPendingState(null);
+                setSelectedDecks([]);
+                setCurrentWord("");
+                resetTyping("");
 
+              // 勝敗判定(敗北時)
               if (finalState.playerCurrentHp <= 0) {
                 await showMessage("GAME OVER...", "danger");
-                window.location.href = "/home";
-              }
+                window.location.href = "/result" , { 
+                  state: { isVictory: false, turns: finalState.turnCount, missCount: missCount } 
+                };}
             } catch (error) {
               console.error("Defense API Error:", error);
             }
@@ -206,13 +209,13 @@ export default function Battle() {
     let timeLimit = 0;
     const isOvercast = selectedDecks.length === 1 && totalSelectedCost > battleState.remainingCost;
 
-    //タイピング時間操作
+    // タイピング時間の計算を修正して、オーバーキャスト時は1つのスキルのコストに基づく時間を設定する
     if (isOvercast) {
       newWord = getRandomWord(selectedDecks[0].skill.cost) + " " + getRandomWord(selectedDecks[0].skill.cost);
-      timeLimit = 3000 + (selectedDecks[0].skill.cost * 1000); 
+      timeLimit = 3000 + (selectedDecks[0].skill.cost * 1000); // 1つのスキルのコストに基づく時間
     } else {
       newWord = selectedDecks.map(d => getRandomWord(d.skill.cost)).join(" ");
-      timeLimit = 3000 + (totalSelectedCost * 500);
+      timeLimit = 3000 + (totalSelectedCost * 500); // 基本時間 + コストに応じた追加時間
     }
 
     setCurrentWord(newWord);
@@ -244,13 +247,12 @@ export default function Battle() {
         currentState: battleState 
       };
       
-      // メッセージを待つ前に、タイピング文字を即座に消す！
       setCurrentWord("");
       resetTyping("");
 
       const updatedState = await api.executeAttack(requestData);
 
-      // JUSTボーナスも await で待つ！
+      // JUSTボーナス
       if (justBonus && updatedState.enemyCurrentHp < battleState.enemyCurrentHp) {
         await showMessage("JUST BONUS!! ダメージ1.5倍！", "success"); 
       }
@@ -266,6 +268,7 @@ export default function Battle() {
         setTimeout(() => setEnemyTakingDamage(false), 500);
       }
 
+      // 攻撃後の状態に応じて、次のフェーズを決定する
       if (!updatedState.battleFinished) {
         setTimeout(() => {
           setPendingState(updatedState); 
@@ -282,23 +285,30 @@ export default function Battle() {
         setBattleState(updatedState);
         if (updatedState.victory) {
 
-          //メッセージを待つ前に、タイピング文字を即座に消す！
           setCurrentWord("");
           resetTyping("");
 
           await showMessage("VICTORY!! 敵を倒した！", "success"); 
           try {
-            await api.finishBattle({ userId: 1, 
-                                     stageId: battleState.stageId, 
-                                     isVictory: true,  //後々、勝敗判定をサーバー側で行うように変更する予定
-                                     clearTurns: updatedState.turnCount, 
-                                     totalTypedChars: 100, 
-                                     missedChars: 5 });
+            await api.finishBattle({ 
+              userId: 1, 
+              stageId: battleState.stageId, 
+              isVictory: true, 
+              clearTurns: updatedState.turnCount, 
+              totalTypedChars: 100, 
+              missedChars: missCount 
+            });
+            //リザルト画面へ遷移
+            navigate("/result", { 
+              state: { isVictory: true, turns: updatedState.turnCount, missCount: missCount } 
+            });
           } catch (e) { console.error(e); }
-          window.location.href = "/home"; //後々リザルト画面への遷移に変更
         } else {
           await showMessage("GAME OVER...", "danger");
-          window.location.href = "/home";
+          //リザルト画面へ遷移
+          navigate("/result", { 
+            state: { isVictory: false, turns: updatedState.turnCount, missCount: missCount } 
+          });
         }
       }
       
@@ -336,7 +346,7 @@ export default function Battle() {
     setCurrentWord(firstWord);
     resetTyping(firstWord, true);
     
-    // マナチャージボーナスとして、防衛時間を長め（例: 8秒）にする！
+    // マナチャージボーナスとして、防衛時間を長め（10秒）にする
     setMaxTime(10000);
     setTimeLeft(10000);
     setFlowSpeed(3000); // 難易度に合わせてスピードを調整
@@ -462,7 +472,7 @@ export default function Battle() {
             const isSelected = selectIndex !== -1;
             const canSelect = isSelected || selectedDecks.length === 0 || (totalSelectedCost + deck.skill.cost <= battleState.remainingCost);
 
-            // 💡 状態に応じてクラス名を決定する
+            // 状態に応じてクラス名を決定する
             let cardClass = "card selectable";
             if (isSelected) cardClass = "card selected";
             else if (!canSelect) cardClass = "card disabled";
